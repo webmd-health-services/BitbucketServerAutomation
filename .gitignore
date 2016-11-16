@@ -1,2 +1,3 @@
 nuget.exe
 packages/**/*
+pester.xml
