@@ -57,40 +57,16 @@ function Get-BBServerRepository
         }
         else
         {
-            $resourcePath = '{0}/{1}' -f $resourcePath,$Name
+            $resourcePath = '{0}/{1}' -f $resourcePath,[uri]::EscapeDataString($Name)
         }
     }
 
     $result = $null
-    #try
-    #{
     $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath,[int16]::MaxValue) -ErrorVariable 'errors'
     if( -not $result )
     {
         return
     }
-    <#}
-    catch [Net.WebException]
-    {
-        $ex = $_.Exception
-        if( $ex.Response.StatusCode -ne [Net.HttpStatusCode]::NotFound )
-        {
-            throw
-        }
-
-        for( $idx = 0; $idx -lt $errors.Count; ++$idx )
-        {
-            if( $Global:Error.Count -gt 0 )
-            {
-                $Global:Error.RemoveAt(0)
-            }
-        }
-        
-        Write-Error -Message ('[{0}] [{1}] Repository ''{2}'' does not exist.' -f $Connection.Uri,$ProjectKey,$Name)
-        return
-    }
-    #>
-
     
     if( ($result | Get-Member -Name 'values') )
     {
@@ -104,8 +80,5 @@ function Get-BBServerRepository
         }
     }
 
-    $result | ForEach-Object {
-                                    $_.pstypenames.Add('Atlassian.Bitbucket.Server.RepositoryInfo')
-                                    $_
-                             }
+    $result | Add-PSTypeName -RepositoryInfo
 }
