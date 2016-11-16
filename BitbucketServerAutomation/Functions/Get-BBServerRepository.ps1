@@ -62,10 +62,14 @@ function Get-BBServerRepository
     }
 
     $result = $null
-    try
+    #try
+    #{
+    $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath,[int16]::MaxValue) -ErrorVariable 'errors'
+    if( -not $result )
     {
-        $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath,[int16]::MaxValue) -ErrorVariable 'errors'
+        return
     }
+    <#}
     catch [Net.WebException]
     {
         $ex = $_.Exception
@@ -85,6 +89,7 @@ function Get-BBServerRepository
         Write-Error -Message ('[{0}] [{1}] Repository ''{2}'' does not exist.' -f $Connection.Uri,$ProjectKey,$Name)
         return
     }
+    #>
 
     
     if( ($result | Get-Member -Name 'values') )

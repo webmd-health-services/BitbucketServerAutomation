@@ -67,5 +67,40 @@ function Invoke-BBServerRestMethod
     $authHeaderValue = 'Basic {0}' -f [Convert]::ToBase64String( [Text.Encoding]::UTF8.GetBytes($credential) )
     $headers = @{ 'Authorization' = $authHeaderValue }
 
-    Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam
+    try
+    {
+        Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+    }
+    catch [Net.WebException]
+    {
+        [Net.WebException]$ex = $_.Exception
+        $response = $ex.Response
+        $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
+        $content = $reader.ReadToEnd() | ConvertFrom-Json
+        $reader.Dispose()
+
+        for( $idx = 0; $idx -lt $errors.Count; ++$idx )
+        {
+            if( $Global:Error.Count -gt 0 )
+            {
+                $Global:Error.RemoveAt(0)
+            }
+        }
+        
+        foreach( $item in $content.errors )
+        {
+            $message = $item.message
+            if( $item.context )
+            {
+                $message ='{0} [context: {1}]' -f $message,$item.context
+            }
+            if( $item.exceptionName )
+            {
+                $message = '{0}: {1}' -f $item.exceptionName,$message
+            }
+
+            Write-Error -Message $message
+        }
+        return
+    }
 }
