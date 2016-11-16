@@ -45,7 +45,7 @@ function Invoke-BBServerRestMethod
         # The path to the resource to use. If the endpoint URI `http://example.com/rest/build-status/1.0/commits`, the ResourcePath is everything after the API version. In this case, the resource path is `commits`.
         $ResourcePath,
 
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline=$true)]
         [object]
         $InputObject
     )
@@ -55,7 +55,11 @@ function Invoke-BBServerRestMethod
     $uriPath = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
     $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPath
 
-    $body = $InputObject | ConvertTo-Json -Depth ([int32]::MaxValue)
+    $bodyParam = @{ }
+    if( $InputObject )
+    {
+        $bodyParam['Body'] = $InputObject | ConvertTo-Json -Depth ([int32]::MaxValue)
+    }
 
     $credential = $Connection.Credential
     $credential = '{0}:{1}' -f $credential.UserName,$credential.GetNetworkCredential().Password
@@ -63,5 +67,5 @@ function Invoke-BBServerRestMethod
     $authHeaderValue = 'Basic {0}' -f [Convert]::ToBase64String( [Text.Encoding]::UTF8.GetBytes($credential) )
     $headers = @{ 'Authorization' = $authHeaderValue }
 
-    Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' -Body $body
+    Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam
 }
