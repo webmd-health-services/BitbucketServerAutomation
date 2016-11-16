@@ -11,6 +11,16 @@ function Set-BBServerCommitBuildStatus
     Data about the commit is read from the environment set up by supported build servers, which arethe Jenkins and TeamCity. Bitbucket Server must have the commit ID, a key that uniquely identifies this specific build, and a URI that points to the build's report. The build name is optional, but when running under a supported build server, is also pulled from the environment.
 
     If a commit already has a status, this function will overwrite it.
+
+    .EXAMPLE
+    Set-BBServerCommitBuildStatus -Connection $conn -Status InProgress
+
+    Demonstrates how this function should be called when running under a build server. Currently, Jenkins and TeamCity are supported.
+
+    .EXAMPLE
+    Set-BBServerCommitBuildStatus -Connection $conn -Status Successful -CommitID 'e24e50bba38db28fb8cf433d00c0d3372f8405cf' -Key 'jenkins-WhsInit-140' -BuildUri 'https://jenkins.dev.webmd.com/job/WhsInit/140/' -Name 'WhsInit' -Verbose
+
+    Demonstrates how to set the build status for a commit using your own custom commit ID, key, and build URI.
     #>
     [CmdletBinding()]
     param(
@@ -90,6 +100,7 @@ function Set-BBServerCommitBuildStatus
     }
     else
     {
+        <#
         $body = @{
                     state = $Status.ToUpperInvariant();
                     key = $Key
@@ -98,6 +109,7 @@ function Set-BBServerCommitBuildStatus
                     description = $Description;
                  }
         $resourcePath = 'commits/{0}' -f $CommitID
+        #>
     }
 
     $body | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'build-status' -ResourcePath $resourcePath

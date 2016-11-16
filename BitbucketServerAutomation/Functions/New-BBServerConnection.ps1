@@ -7,6 +7,11 @@ function New-BBServerConnection
 
     .DESCRIPTION
     The `New-BBServerConnection` function creates a connection object that is used by most Bitbucket Server Automation functions to connect to Bitbucket Server. You pass it credentials and the URI to the Bitbucket Server you want to connect to. It returns an object that is then passed to additional functions that require it.
+
+    .EXAMPLE
+    $conn = New-BBServerConnection -Credential (Get-Credential) -Uri 'https://stash.portal.webmd.com'
+
+    Demonstrates how to create a connection.
     #>
     [CmdletBinding()]
     param(
