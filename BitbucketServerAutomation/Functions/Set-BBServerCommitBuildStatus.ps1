@@ -60,7 +60,7 @@ function Set-BBServerCommitBuildStatus
         [uri]
         # A URI to the build results. The default is read from the environment variables that get set by build servers.
         #
-        # If running under Jenkins, the `JOB_URL` environment variable is used.
+        # If running under Jenkins, the `BUILD_URL` environment variable is used.
         #
         # If running under TeamCity, the URL is constructed from information defined in configuration files that TeamCity creates. A TeamCity build URL format is `SERVER_URI/viewLog.html?buildId=BUILD_ID&buildTypeID=BUILD_TYPE_ID`. `BUILD_TYPE_ID` and `BUILD_ID` are read from the `teamcity.buildType.id` and `teamcity.build.id` properties in the file defined in `TEAMCITY_BUILD_PROPERTIES_FILE` environment variable. `SERVER_URL` is read from the `teamcity.serverUrl` property in the file defined by the `teamcity.configuration.properties.file` property that is defined in the file defined by the `TEAMCITY_BUILD_PROPERTIES_FILE` environment variable.
         #
@@ -93,7 +93,7 @@ function Set-BBServerCommitBuildStatus
                     state = $Status.ToUpperInvariant();
                     key = (Get-Item -Path 'env:BUILD_TAG').Value;
                     name = (Get-Item -Path 'env:JOB_NAME').Value;
-                    url = (Get-Item -Path 'env:JOB_URL').Value;
+                    url = (Get-Item -Path 'env:BUILD_URL').Value;
                     description = $Description;
                  }
         $resourcePath = 'commits/{0}' -f (Get-Item -Path 'env:GIT_COMMIT').Value
