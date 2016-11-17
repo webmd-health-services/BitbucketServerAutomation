@@ -4,11 +4,6 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-function New-TestRepoName
-{
-    'BitbucketServerAutomationTest{0}' -f [IO.Path]::GetRandomFileName()
-}
-
 $conn = New-WhsBBServerConnection
 $projectKey = Get-WhsBBServerTestProjectKey
 
@@ -68,8 +63,4 @@ Describe 'when creating a repository with custom settings' {
     }    
 }
 
-Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name 'BitbucketServerAutomationTest*' | 
-    ForEach-Object { Invoke-BBServerRestMethod -Connection $conn -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$_.slug) } |
-    Format-List |
-    Out-String |
-    Write-Debug
+Remove-BBServerTestRepository
