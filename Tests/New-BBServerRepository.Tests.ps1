@@ -14,7 +14,7 @@ if( $conn.Credential.UserName -eq 'svc-prod-lcsbitbucke' )
 }
 
 
-Describe 'when the new repository doesn''t exist' {
+Describe 'New-BBServerRepository when the new repository doesn''t exist' {
     $repoName = New-TestRepoName
     $repo = New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $repoName
 
@@ -39,7 +39,7 @@ Describe 'when the new repository doesn''t exist' {
     }
 }
 
-Describe 'when the repository already exists' {
+Describe 'New-BBServerRepository when the repository already exists' {
     $Global:Error.Clear()
     $repoName = New-TestRepoName
     $repo = New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $repoName
@@ -52,7 +52,7 @@ Describe 'when the repository already exists' {
     }
 }
 
-Describe 'when creating a repository with custom settings' {
+Describe 'New-BBServerRepository when creating a repository with custom settings' {
     $repoName = New-TestRepoName
     $repo = New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $repoName -NotForkable -Public
     It 'should not be forkable' {

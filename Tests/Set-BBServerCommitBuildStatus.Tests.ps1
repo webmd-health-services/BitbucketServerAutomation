@@ -131,7 +131,7 @@ function New-MockJenkinsBuild
     return $buildEnv
 }
 
-Describe 'when a build starts under Jenkins' {
+Describe 'Set-BBServerCommitBuildStatus when a build starts under Jenkins' {
     $conn = New-MockBBServer
     $env = New-MockJenkinsBuild
 
