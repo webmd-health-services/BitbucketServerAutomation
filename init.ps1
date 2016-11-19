@@ -17,28 +17,26 @@ param(
 Set-StrictMode -Version 'Latest'
 #Requires -Version 4
 
-$packagesRoot = Join-Path -Path $PSScriptRoot -ChildPath 'packages'
-
-$nugetPath = Join-Path -Path $PSScriptRoot -ChildPath 'nuget.exe'
-
-if( $Clean )
+foreach( $moduleName in @( 'Pester', 'Carbon' ) )
 {
-    $nugetPath | Remove-Item
-    $packagesRoot | Remove-Item -Recurse
+    $modulePath = Join-Path -Path $PSScriptRoot -ChildPath $moduleName
+    if( (Test-Path -Path $modulePath -PathType Container) )
+    {
+        if( $Clean )
+        {
+            Remove-Item -Path $modulePath -Recurse -Force
+        }
+
+        continue
+    }
+
+    Save-Module -Name $moduleName -Path $PSScriptRoot
+
+    $versionDir = Join-Path -Path $modulePath -ChildPath '*.*.*'
+    if( (Test-Path -Path $versionDir -PathType Container) )
+    {
+        $versionDir = Get-Item -Path $versionDir
+        Get-ChildItem -Path $versionDir -Force | Move-Item -Destination $modulePath -Verbose
+        Remove-Item -Path $versionDir
+    }
 }
-
-if( -not (Test-Path -Path $nugetPath -PathType Leaf) )
-{
-    Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetPath
-}
-
-& $nugetPath install 'Pester' -OutputDirectory $packagesRoot
-& $nugetPath install 'Carbon' -OutputDirectory $packagesRoot
-
-$carbonDir = Get-Item -Path (Join-Path -Path $packagesRoot -ChildPath 'Carbon.*.*.*\Carbon')
-& (Join-Path -Path $carbonDir -ChildPath 'Import-Carbon.ps1' -Resolve)
-
-Install-Junction -Link (Join-Path -Path $packagesRoot -ChildPath 'Carbon') -Target $carbonDir.FullName
-
-$pesterdir = Get-Item -Path (Join-Path -Path $packagesRoot -ChildPath 'Pester.*.*.*\tools')
-Install-Junction -Link (Join-Path -Path $packagesRoot -ChildPath 'Pester') -Target $pesterdir.FullName

@@ -2,3 +2,5 @@ nuget.exe
 packages/**/*
 pester.xml
 Tests/BBServerAutomationTest/server.json
+Carbon/**/*
+Pester/**/*

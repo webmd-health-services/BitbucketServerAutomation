@@ -22,7 +22,7 @@ be put in `packages\Carbon`. Then you can run these commands to generate
 a key/pair and encrypt your password with it:
 
     > .\init.ps1
-    > .\packages\Carbon\Import-Carbon.ps1
+    > .\Carbon\Import-Carbon.ps1
     > New-RsaKeyPair
     > Protect-String -String 'PASSWORD' -Certificate 'PUBLIC KEY PATH'
 '@)

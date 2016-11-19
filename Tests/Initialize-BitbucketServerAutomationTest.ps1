@@ -1,6 +1,6 @@
 
 & (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
-& (Join-Path -Path $PSScriptRoot -ChildPath '..\packages\Carbon\Import-Carbon.ps1' -Resolve)
+& (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon\Import-Carbon.ps1' -Resolve)
 
 if( (Get-Module -Name 'BBServerAutomationTest') )
 {
