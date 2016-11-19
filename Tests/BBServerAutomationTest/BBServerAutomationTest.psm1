@@ -71,5 +71,15 @@ function New-WhsBBServerConnection
 
 function Remove-BBServerTestRepository
 {
-    Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $conn 
+    param(
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Connection,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ProjectKey
+    )
+
+    Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection
 }

@@ -63,4 +63,4 @@ Describe 'New-BBServerRepository when creating a repository with custom settings
     }    
 }
 
-Remove-BBServerTestRepository
+Remove-BBServerTestRepository -Connection $conn -ProjectKey $projectKey

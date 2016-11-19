@@ -106,4 +106,4 @@ Describe 'Remove-BBServerRepository when using a name but project key missing' {
     }
 }
 
-Remove-BBServerTestRepository
+Remove-BBServerTestRepository -Connection $conn -ProjectKey $projectKey
