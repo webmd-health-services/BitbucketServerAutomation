@@ -64,6 +64,7 @@ if( -not (Test-Path -Path $installerPath -PathType Leaf) )
     $downloadUri = 'https://www.atlassian.com/software/stash/downloads/binary/atlassian-bitbucket-{0}-x64.exe' -f $version
     $currentActivity = ('Downloading Bitbucket Server {0}' -f $version)
     Write-Progress -Activity $currentActivity
+    Write-Verbose -Message $currentActivity
     Invoke-WebRequest -UseBasicParsing -Uri $downloadUri -OutFile $installerPath
     Write-Progress -Completed -Activity $currentActivity
 }
@@ -98,6 +99,7 @@ sys.languageId=en
     try
     {
         Write-Progress -Activity $currentActivity -Status 'Please wait. This could take several minutes.'
+        Write-Verbose -Message $currentActivity
         Start-Process -Wait $installerPath -ArgumentList '-q','-varfile',$installerResponseVarfilePath
     }
     finally
@@ -162,12 +164,34 @@ setup.sysadmin.emailAddress=nobody@example.com
 
 Get-Service -Name '*Bitbucket*' | Start-Service
 
-$currentActivity = 'Warming up Bitbucket Server {0}' -f $version
-Write-Progress -Activity $currentActivity -Status 'Please wait. This could take several minutes.'
-$result = Invoke-WebRequest -Uri $bbServerUri
-if( $result.StatusCode -ne 200 )
+$currentActivity = 'Waiting for Bitbucket Server {0} to Start' -f $version
+$status = 'Please wait. This could take several minutes'
+Write-Progress -Activity $currentActivity -Status $status
+Write-Verbose -Message $currentActivity
+
+$percentComplete = 1
+do
 {
-    $result
-    Write-Error -Message ('Bitbucket Server isn''t running.')
+    Write-Progress -Activity $currentActivity -Status $status -PercentComplete ($percentComplete++)
+    $result = Invoke-WebRequest -Uri $bbServerUri -Verbose:$false
+    if( $result )
+    {
+        $status = $result.StatusCode
+        $title = $result.ParsedHtml.Title
+        Write-Verbose -Message ('GET {0} -> {1}  {2}' -F $bbServerUri,$status,$title)
+        if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
+        {
+            break
+        }
+    }
+
+    Start-Sleep -Seconds 5
+
+    if( $percentComplete -gt 100 )
+    {
+        break
+    }
 }
+while( $true )
+
 Write-Progress -Activity $currentActivity -Completed
