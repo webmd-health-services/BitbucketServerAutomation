@@ -20,21 +20,12 @@ for( $idx = 0; $idx -lt 30; ++$idx )
     New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $idx -ErrorAction Ignore
 }
 
-    Describe 'Should Be when piped multipe values' {
-         It 'should pass' {
-             {
-                @( $true, $true, $true ) | Should Be $true
-             } | Should Not Throw
-         }
-    }
-    
 Describe 'Get-BBServerRepository when getting all repositories for a project' {
     [object[]]$repos = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey 
     It 'should get all the repositories' {
         $repos.Count | Should BeGreaterThan 25
     }
     It 'should add type info' {
-        @( $true, $true, $true ) | Should Be $true
         $repos | ForEach-Object { ($_.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo') | Should Be $true } 
     }
 
