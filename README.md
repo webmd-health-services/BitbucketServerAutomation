@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/github/pshdo/bitbucketserverautomation?svg=true)](https://ci.appveyor.com/project/splatteredbits/bitbucketserverautomation)
+
 # Overview
 
 Bitbucket Server Automation is a PowerShell module for automating [Bitbucket Server](https://www.atlassian.com/software/bitbucket). Bitbucket Server is Git repository management software that you host on your own server.
