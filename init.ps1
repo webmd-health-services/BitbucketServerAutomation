@@ -138,16 +138,21 @@ $bbPropertiesPath = Join-Path -Path $bitbucketHomePath -ChildPath 'shared\bitbuc
 $bbServerUri = 'http://{0}:7990/' -f $env:COMPUTERNAME.ToLowerInvariant()
 if( -not (Test-Path -Path $bbPropertiesPath -PathType Leaf) )
 {
-        @"
+    $licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense' -Resolve
+    if( -not $licensePath )
+    {
+        Write-Error -Message ('Bitbucket Server license file ''{0}'' does not exist. Atlassian has donated a license to the project for use in automated tests. If you are a trusted contributor to the project, please request a copy of this license from the project owners and maintainers. Otherwise, please request a trial/evaluation license from Atlassian.')
+        return
+    }
+
+    $license = Get-Content -Path $licensePath | ForEach-Object { $_.TrimEnd('\') + '\' }
+    $license = $license -join [Environment]::NewLine
+    $license = $license.TrimEnd('\')
+
+    @"
 setup.displayName=Bitbucket Server Automation
 setup.baseUrl= $($bbServerUri)
-setup.license= AAABLQ0ODAoPeNptkE1Lw0AQhu/7Kxa86GFLN7TUFBZsk1Qq+ZAmKhQvk3VqF9NN2N0U++9NTEWRH\
-gaGeWeemXeuin1LH0BT7lM+m3N/Pp3SIC+oN+YzEqKVRjVO1VoslStb+YGOXudojmhuXuc0OkLVQ\
-q+TwOB3EoJD0U+zMWfemAS1diBdlICqBICp9Z1tKnAODb6VytmRrA/kFyScaZFYB3Y/6ubUEYdKp\
-SRqi89obN/lkQ6oHWrQEqPPRpnTn80e47ckM++glR2oL1gm4RkbD6ji1GAKBxRBliTRJlgvYjJYW\
-4dieb9ZsDhNfJYttltWrFYZyaNUdMFin08nk87bGdS1x+vwknL5sOGK3IHpniB2UNkfw2l7KNFku\
-yfb2RSMk8fWyD1Y/P/VL3D0j64wLQIVAI7Po7lyC4UkjRXDbcDgOdrG0VpKAhQy/NSzAnedLZS8w\
-KiWKFCrfIZEgA==X02f7
+setup.license= $($license)
 setup.sysadmin.username=$($credential.UserName)
 setup.sysadmin.password=$($credential.GetNetworkCredential().Password)
 setup.sysadmin.displayName=Administrator
