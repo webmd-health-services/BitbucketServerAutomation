@@ -4,14 +4,11 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-WhsBBServerConnection
-$projectKey = Get-WhsBBServerTestProjectKey
+$conn = New-BBServerTestConnection -ProjectKey 'RBBSREPO' -ProjectName 'Remove-BBServerRepository Tests'
 
-if( $conn.Credential.UserName -eq 'svc-prod-lcsbitbucke' -or $conn.Uri -eq 'https://stash.portal.webmd.com/' -or $projectKey -eq 'WHS' )
-{
-    Write-Warning -Message ('These tests are being skipped so as not to inadvertently delete repositories from the main Bitbucket Server instance. Once we have a test instance and/or test project for improved isolation, we can re-enable these tests.')
-    return
-}
+$myConfirmPref = $ConfirmPreference
+# If you want to see confirmation boxes, then comment out this line.
+$Global:ConfirmPreference = 'None'
 
 Describe 'Remove-BBServerRepository when the repository doesn''t exist' {
     $Global:Error.Clear()
@@ -106,4 +103,4 @@ Describe 'Remove-BBServerRepository when using a name but project key missing' {
     }
 }
 
-Remove-BBServerTestRepository -Connection $conn -ProjectKey $projectKey
+$Global:ConfirmPreference = $myConfirmPref

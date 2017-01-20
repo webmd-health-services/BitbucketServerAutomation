@@ -4,7 +4,7 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-WhsBBServerConnection
+$conn = New-BBServerTestConnection
 $projectKey = 'NBBSPROJ'
 
 function New-TestProjectInfo

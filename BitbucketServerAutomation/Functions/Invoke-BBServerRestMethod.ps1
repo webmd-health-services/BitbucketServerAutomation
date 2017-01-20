@@ -51,6 +51,7 @@ function Invoke-BBServerRestMethod
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $uriPath = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
     $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPath
@@ -106,7 +107,7 @@ function Invoke-BBServerRestMethod
                 $message = '{0}: {1}' -f $item.exceptionName,$message
             }
 
-            Write-Error -Message $message
+            Write-Error -Message $message -ErrorAction $ErrorActionPreference
         }
         return
     }

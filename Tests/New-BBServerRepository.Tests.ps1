@@ -4,15 +4,7 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-WhsBBServerConnection
-$projectKey = Get-WhsBBServerTestProjectKey
-
-if( $conn.Credential.UserName -eq 'svc-prod-lcsbitbucke' )
-{
-    Write-Warning -Message ('Can''t run these tests. They require admin privileges and `svc-prod-lcsbitbucke` doesn''t have admin rights.')
-    return
-}
-
+$conn = New-BBServerTestConnection -ProjectKey 'NBBSREPO' -ProjectName 'New-BBServerRepository Tests'
 
 Describe 'New-BBServerRepository when the new repository doesn''t exist' {
     $repoName = New-TestRepoName
@@ -62,5 +54,3 @@ Describe 'New-BBServerRepository when creating a repository with custom settings
         $repo.public | Should Be $true
     }    
 }
-
-Remove-BBServerTestRepository -Connection $conn -ProjectKey $projectKey

@@ -1,8 +1,12 @@
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-WhsBBServerConnection
-$projectKey = Get-WhsBBServerTestProjectKey
+$conn = New-BBServerTestConnection -ProjectKey 'GBBSREPO' -ProjectName 'Get-BBServerRepository Tests'
+
+for( $idx = 0; $idx -lt 30; ++$idx )
+{
+    New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $idx -ErrorAction Ignore
+}
 
 Describe 'Get-BBServerRepository when getting all repositories for a project' {
     [object[]]$repos = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey 
@@ -15,10 +19,10 @@ Describe 'Get-BBServerRepository when getting all repositories for a project' {
 }
 
 Describe 'Get-BBServerRepository when getting a specific repository' {
-    $repo = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name 'BitbucketServerAutomation'
+    $repo = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name '1'
     It 'should get it' {
         $repo | Should Not BeNullOrEmpty
-        $repo.name | Should Be 'BitbucketServerAutomation'
+        $repo.name | Should Be '1'
     }
     It 'should add type info' {
         $repo.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo' | Should Be $true
@@ -27,11 +31,11 @@ Describe 'Get-BBServerRepository when getting a specific repository' {
 
 Describe 'Get-BBServerRepository when getting a specific repository with a wildcard' {
     $errors = @()
-    [object[]]$repo = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name 'WebMD.*' -ErrorVariable 'errors'
+    [object[]]$repo = Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name '1*' -ErrorVariable 'errors'
     It 'should get multiple repositories' {
         $errors | Should BeNullOrEmpty
         $repo.Count | Should BeGreaterThan 1
-        $repo | Select-Object -ExpandProperty 'name' | Should Match '^WebMD\.'
+        $repo | Select-Object -ExpandProperty 'name' | Should Match '^1'
     }
 }
 

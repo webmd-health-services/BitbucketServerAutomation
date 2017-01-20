@@ -1,72 +1,36 @@
 
 Set-StrictMode -Version 'Latest'
 
-$serverJsonPath = Join-Path -Path $PSScriptRoot -ChildPath 'server.json'
-if( -not (Test-Path -Path $serverJsonPath -PathType Leaf) )
-{
-    throw (@'
-Can''t run tests. Configuration file ''{0}'' does not exist. Please 
-create this file from the template ''{1}.sample''. 
-
-This file should contain an encrypted password to use to connect to 
-Bitbucket Server. The password should be encrypted using public-key 
-cryptography. Ggenerate a public/private key pair, encrypt the password 
-with the public key, save it and the key's thumbprint in ''{0}'', then 
-put the private key into the LocalComputer\My certificate store on every 
-computer that will run these tests. 
-
-123456789012345678901234567890123456789012345678901234567890123456789012
-The Carbon module has functions for doing this. If you run the 
-`init.ps1` script in the root of the repository, a copy of Carbon will 
-be put in `packages\Carbon`. Then you can run these commands to generate
-a key/pair and encrypt your password with it:
-
-    > .\init.ps1
-    > .\Carbon\Import-Carbon.ps1
-    > New-RsaKeyPair
-    > Protect-String -String 'PASSWORD' -Certificate 'PUBLIC KEY PATH'
-'@)
-}
-
-$config = Get-Content -Path $serverJsonPath -Raw | ConvertFrom-Json
-if( -not $config )
-{
-    throw ('Test configuration file ''{0}'' is not valid JSON.' -f $serverJsonPath)
-}
-
-function Get-WhsBBServerTestProjectKey
-{
-    if( -not ($config | Get-Member -Name 'ProjectKey') -or -not $config.ProjectKey) 
-    {
-        throw ('ProjectKey is missing from ''{0}''.' -f $serverJsonPath)
-    }
-
-    $config.ProjectKey
-}
-
 function New-TestRepoName
 {
     'BitbucketServerAutomationTest{0}' -f [IO.Path]::GetRandomFileName()
 }
 
-function New-WhsBBServerConnection
+function New-BBServerTestConnection
 {
-    foreach( $field in @('UserName','Password','DecryptionCertificateThumbprint') )
+    param(
+        $ProjectKey,
+        $ProjectName
+    )
+
+    $credentialPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\.bbservercredential' -Resolve
+    if( -not $credentialPath )
     {
-        if( -not ($config | Get-Member -Name $field) -or -not $config.$field) 
-        {
-            throw ('{0} property is missing from ''{1}''.' -f $field, $serverJsonPath)
-        }
+        throw ('The credential to a local Bitbucket Server instance does not exist. Please run init.ps1 in the root of the repository to install a local Bitbucket Server. This process creates a credential and saves it in a secure format. The automated tests use this credential to connect to Bitbucket Server when running tests.')
+    }
+    $credential = Import-Clixml -Path $credentialPath
+    if( -not $credential )
+    {
+        throw ('The credential in ''{0}'' is not valid. Please delete this file, uninstall your local Bitbucket Server instance (with the Uninstall-BitbucketServer.ps1 PowerShell script in the root of the repository), and re-run init.ps1.')
+    }
+    $conn = New-BBServerConnection -Credential $credential -Uri ('http://{0}:7990' -f $env:COMPUTERNAME.ToLowerInvariant())
+
+    if( $ProjectKey -and $ProjectName )
+    {
+        New-BBServerProject -Connection $conn -Key $ProjectKey -Name $ProjectName -ErrorAction Ignore | Out-Null
     }
 
-    $password = Unprotect-String -Thumbprint $config.DecryptionCertificateThumbprint -ProtectedString $config.Password -AsSecureString
-    if( -not $password )
-    {
-        throw 'Unable to decrypt Password from ''{0}''.' -f $serverJsonPath
-    }
-
-    $credential = New-Object -TypeName 'Management.Automation.PSCredential' $config.UserName,$password
-    New-BBServerConnection -Credential $credential -Uri 'https://stash.portal.webmd.com'
+    return $conn
 }
 
 function Remove-BBServerTestRepository
