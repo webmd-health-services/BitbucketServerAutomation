@@ -61,6 +61,13 @@ function Invoke-BBServerRestMethod
         $bodyParam['Body'] = $InputObject | ConvertTo-Json -Depth ([int32]::MaxValue)
     }
 
+    #$DebugPreference = 'Continue'
+    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(), $uri)
+    if( $bodyParam['Body'] )
+    {
+        Write-Debug -Message $bodyParam['Body']
+    }
+
     $credential = $Connection.Credential
     $credential = '{0}:{1}' -f $credential.UserName,$credential.GetNetworkCredential().Password
 
