@@ -1,3 +1,4 @@
+.bbservercredential
 nuget.exe
 packages/**/*
 pester.xml
