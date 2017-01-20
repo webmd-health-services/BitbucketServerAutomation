@@ -15,7 +15,7 @@ Describe 'Get-BBServerRepository when getting all repositories for a project' {
         $repos.Count | Should BeGreaterThan 25
     }
     It 'should add type info' {
-        $repos | ForEach-Object { $_.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo' } | Should Be $true
+        $repos | ForEach-Object { ($_.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo') | Should Be $true } 
     }
 }
 
