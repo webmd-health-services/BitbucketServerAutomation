@@ -1,5 +1,5 @@
 
-.\init.ps1
+.\init.ps1 -Verbose:$VerbosePreference
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Pester' -Resolve)
 
