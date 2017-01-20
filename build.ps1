@@ -16,12 +16,36 @@
 param(
 )
 
+#Requires -Version 4
+Set-StrictMode -Version 'Latest'
+
 .\init.ps1 -Verbose:$VerbosePreference
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Pester' -Resolve)
+$originalVerbosePref = $VerbosePreference
 
-$Global:LASTEXITCODE = 0
+$result = @()
+try
+{
+    $VerbosePreference = 'SilentlyContinue'
 
-$result = Invoke-Pester -Script (Join-Path -Path $PSScriptRoot -ChildPath 'Tests' -Resolve) -OutputFormat NUnitXml -OutputFile (Join-Path -Path $PSScriptRoot -ChildPath 'pester.xml') -PassThru
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'Pester' -Resolve) -Verbose:$false -Force
 
-exit $result.FailedCount
+    $Global:LASTEXITCODE = 0
+
+    $result = Invoke-Pester -Script (Join-Path -Path $PSScriptRoot -ChildPath 'Tests' -Resolve) `
+                            -OutputFormat NUnitXml `
+                            -OutputFile (Join-Path -Path $PSScriptRoot -ChildPath 'pester.xml') `
+                            -PassThru `
+                            -Verbose:$false
+}
+finally
+{
+    $VerbosePreference = $originalVerbosePref
+}
+
+$result | Format-List | Out-String | Write-Verbose
+
+if( $result.FailedCount )
+{
+    throw ('{0} tests failed.' -f $result.FailedCount)
+}
