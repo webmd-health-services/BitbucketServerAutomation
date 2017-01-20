@@ -1,7 +1,0 @@
-{
-    ServerBaseUri: 'https',
-    ProjectKey: 'PROJECT KEY WHERE TEST REPOSITORIES WILL BE CREATED',
-    Username: 'BITBUCKET SERVER USERNAME',
-    Password: 'ENCRYPTED PASSWORD HERE',
-    DecryptionCertificateThumbprint: 'THUMBPRINT OF CERTIFICATE TO USE TO DECRYPT CERTIFICATE HERE'
-}
