@@ -4,7 +4,8 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-BBServerTestConnection -ProjectKey 'RBBSREPO' -ProjectName 'Remove-BBServerRepository Tests'
+$projectKey = 'RBBSREPO'
+$conn = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Remove-BBServerRepository Tests'
 
 $myConfirmPref = $ConfirmPreference
 # If you want to see confirmation boxes, then comment out this line.

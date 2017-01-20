@@ -4,7 +4,8 @@ Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-BBServerTestConnection -ProjectKey 'NBBSREPO' -ProjectName 'New-BBServerRepository Tests'
+$projectKey = 'NBBSREPO'
+$conn = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerRepository Tests'
 
 Describe 'New-BBServerRepository when the new repository doesn''t exist' {
     $repoName = New-TestRepoName

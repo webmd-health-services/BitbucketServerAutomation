@@ -1,7 +1,8 @@
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$conn = New-BBServerTestConnection -ProjectKey 'GBBSREPO' -ProjectName 'Get-BBServerRepository Tests'
+$projectKey = 'GBBSREPO'
+$conn = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerRepository Tests'
 
 for( $idx = 0; $idx -lt 30; ++$idx )
 {
