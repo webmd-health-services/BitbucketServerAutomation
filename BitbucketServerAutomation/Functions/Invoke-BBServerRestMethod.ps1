@@ -106,6 +106,12 @@ function Invoke-BBServerRestMethod
             }
         }
         
+        if( -not $content )
+        {
+            Write-Error -ErrorRecord $_
+            return
+        }
+
         foreach( $item in $content.errors )
         {
             $message = $item.message

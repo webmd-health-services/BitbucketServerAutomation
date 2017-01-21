@@ -87,7 +87,7 @@ function New-BuildEnvironment
 
     if( $ForJenkins )
     {
-        Mock -CommandName 'Test-Path' -ModuleName 'BitbucketServerAutomation' -MockWith { $true } -ParameterFilter { $Path -eq 'env:GIT_COMMIT' }
+        Mock -CommandName 'Test-Path' -ModuleName 'BitbucketServerAutomation' -MockWith { $true } -ParameterFilter { $Path -eq 'env:JENKINS_URL' }
         Mock -CommandName 'Get-Item' -ModuleName 'BitbucketServerAutomation' -MockWith { [pscustomobject]@{ Value = $buildEnv.CommitID } }.GetNewClosure() -ParameterFilter { $Path -eq 'env:GIT_COMMIT' }
         Mock -CommandName 'Get-Item' -ModuleName 'BitbucketServerAutomation' -MockWith { [pscustomobject]@{ Value = $buildEnv.Key } }.GetNewClosure() -ParameterFilter { $Path -eq 'env:BUILD_TAG' }
         Mock -CommandName 'Get-Item' -ModuleName 'BitbucketServerAutomation' -MockWith { [pscustomobject]@{ Value = $buildEnv.BuildUri } }.GetNewClosure() -ParameterFilter { $Path -eq 'env:BUILD_URL' }

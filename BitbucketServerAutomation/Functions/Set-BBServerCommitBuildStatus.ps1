@@ -98,7 +98,7 @@ function Set-BBServerCommitBuildStatus
     Set-StrictMode -Version 'Latest'
 
     # We're in Jenkins
-    if( (Test-Path 'env:GIT_COMMIT') )
+    if( (Test-Path 'env:JENKINS_URL') )
     {
         $body = @{
                     state = $Status.ToUpperInvariant();
