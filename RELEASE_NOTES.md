@@ -8,3 +8,4 @@
  * Created `Get-BBServerRepository` function for getting a project's repositories.
  * Created `New-BBServerRepository` function for creating new repositories.
  * Created `Set-BBServerCommitBuildStatus` function for setting the build status of a commit.
+ * Created `Get-BBServerCommitBuildStatus` function for getting the build status of a commit.

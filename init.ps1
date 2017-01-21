@@ -29,7 +29,7 @@ param(
 Set-StrictMode -Version 'Latest'
 #Requires -Version 4
 
-foreach( $moduleName in @( 'Pester', 'Carbon' ) )
+foreach( $moduleName in @( 'Pester', 'Carbon', 'LibGit2' ) )
 {
     $modulePath = Join-Path -Path $PSScriptRoot -ChildPath $moduleName
     if( (Test-Path -Path $modulePath -PathType Container) )
@@ -48,7 +48,7 @@ foreach( $moduleName in @( 'Pester', 'Carbon' ) )
     if( (Test-Path -Path $versionDir -PathType Container) )
     {
         $versionDir = Get-Item -Path $versionDir
-        Get-ChildItem -Path $versionDir -Force | Move-Item -Destination $modulePath -Verbose
+        Get-ChildItem -Path $versionDir -Force | Move-Item -Destination $modulePath
         Remove-Item -Path $versionDir
     }
 }

@@ -111,7 +111,6 @@ function Set-BBServerCommitBuildStatus
     }
     else
     {
-        <#
         $body = @{
                     state = $Status.ToUpperInvariant();
                     key = $Key
@@ -120,7 +119,6 @@ function Set-BBServerCommitBuildStatus
                     description = $Description;
                  }
         $resourcePath = 'commits/{0}' -f $CommitID
-        #>
     }
 
     $body | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'build-status' -ResourcePath $resourcePath
