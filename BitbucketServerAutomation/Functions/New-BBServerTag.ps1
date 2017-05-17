@@ -109,13 +109,16 @@ function tag-practice
     $testDrive = ni -Name 'TestDrive' -ItemType 'Directory'
     Set-Location '.\TestDrive'
     #clone the repo
+    #either figure out how to configure the permissions or make it so that anyone can commit
     git clone $repo.links.clone[1].href
     #create a new file
     $newFile = ni -Name 'fubarFile' -ItemType 'file'
     #commit and push the new file to the new cloned repo
     git add $newFile
     git commit -am 'adding new file'
+    git push
     #tag the commit
+    #will probably have to figure out how to access the SHA1 here
     $newTag = @{
         name = "myTag"
         startPoint = "asdfgouihaerg"
