@@ -1,4 +1,4 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
+﻿# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 # 
@@ -85,7 +85,15 @@ function New-BBServerTestConnection
 
     return $conn
 }
+<#
+    This works now, but now I need to pull out all of the git commands into a test suite and pull together just the rest related
+    commands into the actual new-bbservertag function, then write some other tests.
+    
+    Also, don't forget that we've created a bunch of projects on BBServer that will likely need to be removed? Not sure about that 
+    though, as my local instance of BBserver probably doesn't have any effect on the outside world.
 
+    To access BBserver, get the login info from the _netrc file in the env:home directory. The browse URL is contained in the repo.links
+#>
 function tag-practice
 {
     param()
@@ -95,84 +103,47 @@ function tag-practice
         $key -replace '^\d+',''
         'New-BBServerProject-New-Project-{0}' -f [IO.Path]::GetRandomFileName()
     }
+    Push-Location
+    $testDrive = ni -Name 'TestDrive' -ItemType 'Directory' -Path 'C:\Users\esmelser\Projects' -Force
+    Set-Location -path $testDrive
 
     #setup
+    git init
     $conn = New-BBServerTestConnection
     $key,$name = New-TestProjectInfo
     $description = 'description'
     $project = New-BBServerProject -Connection $conn -Key $key -Name $name -Description $description
     $repo = New-BBServerRepository -Connection $conn -ProjectKey $key -Name $name
-
-    #move into the "test drive"
-    $testDrive = ni -Name 'TestDrive' -ItemType 'Directory' -Force
-    Set-Location -path $testDrive
+    $cloneRepo = $repo.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
 
     #create netrc file to maintain credentials for commit and push
-    $netrcFile = New-Item -Name '_netrc' -Path $env:HOME -ItemType 'file' -Value @"
-machine $(([uri]$repo.links.clone[0].href).Host)
+    $netrcFile = New-Item -Name '_netrc' -Force -Path $env:HOME -ItemType 'file' -Value @"
+machine $(([uri]$cloneRepo).Host)
 login $($conn.Credential.UserName)
 password $($conn.Credential.GetNetworkCredential().Password)
 "@
 
-    #clone the repo
-    #either figure out how to configure the permissions or make it so that anyone can commit
-    git clone $repo.links.clone[0].href
-    
-    #create a new file
-    $newFile = New-Item -Name 'fubarFile' -ItemType 'file' -Value 'newFile!!'
-    
-    #commit and push the new file to the new cloned repo
+    #clone, commit and push a new file to the new repo
+    git clone $cloneRepo
+    $newFile = New-Item -Name 'fubarFile' -ItemType 'file' -Value 'newFile!!' -Force
     git add $newFile
-    git commit -am 'adding new file'
+    git commit -am ('adding new file for project-key: {0}' -f $key)
     
-    #get the commit hash
+    #get the HEAD commit hash
     $commitHash = git rev-parse HEAD
-    git push
     
-    #tag the commit
+    git push --set-upstream $cloneRepo master
     
     $newTag = @{
-        name = "myTag"
+        force = "true"
+        name = "v1.4"
         startPoint = $commitHash
         message = "this is my message"
+        type = "ANNOTATED"
                 }
-    $something = $newTag | Invoke-BBServerRestMethod -Connection $conn -Method Post -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $key, $name)
-    Remove-Item -Path $testDrive
-    Remove-Item -Path $netrcFile
-    Remove-BBServerRepository -Connection $conn -ProjectKey $key -Name $name
+    $something = $newTag | Invoke-BBServerRestMethod -Connection $conn -Method Post -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $key, $name)
+    Pop-Location
+    Remove-Item -Path $testDrive -Force -Recurse
+    Remove-Item -Path $netrcFile -Force -Recurse
 }
 
- <#
- $newTag = @{
-        tag = "v0.0.1";
-        message = "test";
-        object = "c3d0be41ecbe669545ee3e94d31ed9a4bc91ee3c";
-        type = "commit";
-        tagger = @{
-            name = "Scott Chacon";
-            email = "schacon@gmail.com";
-            date = "2011-06-17T14:53:35-07:00";
-                }
-        }
-
-$projectKey = 'NBBSREPO'
-
-$conn = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerTag Tests'
-
-$repoName = New-TestRepoName
-
-$repo = $newRepoInfo | Invoke-BBServerRestMethod -Connection $conn -Method Post -ApiName 'api' -ResourcePath ('projects/{0}/repos' -f $ProjectKey)
- 
- $newTagMinusTagger = @{
-        tag = "v0.0.1";
-        message = "test";
-        object = "c3d0be41ecbe669545ee3e94d31ed9a4bc91ee3c";
-        type = "commit";
-        } 
-
-
-
- 
- 
- 
- #>
