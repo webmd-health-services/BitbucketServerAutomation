@@ -139,6 +139,9 @@ password $($conn.Credential.GetNetworkCredential().Password)
         message = "this is my message"
                 }
     $something = $newTag | Invoke-BBServerRestMethod -Connection $conn -Method Post -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $key, $name)
+    Remove-Item -Path $testDrive
+    Remove-Item -Path $netrcFile
+    Remove-BBServerRepository -Connection $conn -ProjectKey $key -Name $name
 }
 
  <#
