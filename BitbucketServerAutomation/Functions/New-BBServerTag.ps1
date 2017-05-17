@@ -119,7 +119,7 @@ password $($conn.Credential.GetNetworkCredential().Password)
     git clone $repo.links.clone[0].href
     
     #create a new file
-    $newFile = ni -Name 'fubarFile' -ItemType 'file'
+    $newFile = New-Item -Name 'fubarFile' -ItemType 'file' -Value 'newFile!!'
     
     #commit and push the new file to the new cloned repo
     git add $newFile
