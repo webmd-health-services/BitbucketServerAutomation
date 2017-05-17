@@ -105,7 +105,7 @@ function tag-practice
 
     #move into the "test drive"
     $testDrive = ni -Name 'TestDrive' -ItemType 'Directory' -Force
-    Set-Location $testDrive
+    Set-Location -path $testDrive
 
     #create netrc file to maintain credentials for commit and push
     $netrcFile = New-Item -Name '_netrc' -Path $env:HOME -ItemType 'file' -Value @"
