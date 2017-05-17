@@ -96,20 +96,18 @@ function tag-practice
         'New-BBServerProject-New-Project-{0}' -f [IO.Path]::GetRandomFileName()
     }
 
+    #setup
     $conn = New-BBServerTestConnection
-    #$projectKey = 'NBBSPROJ'
     $key,$name = New-TestProjectInfo
-    #$key = $projectKey
-    #$name = New-TestRepoName
     $description = 'description'
     $project = New-BBServerProject -Connection $conn -Key $key -Name $name -Description $description
     $repo = New-BBServerRepository -Connection $conn -ProjectKey $key -Name $name
 
-    #move into the test drive
-    $testDrive = ni -Name 'TestDrive' -ItemType 'Directory'
-    Set-Location '.\TestDrive'
+    #move into the "test drive"
+    $testDrive = ni -Name 'TestDrive' -ItemType 'Directory' -Force
+    Set-Location $testDrive
 
-    #create netrc
+    #create netrc file to maintain credentials for commit and push
     $netrcFile = New-Item -Name '_netrc' -Path $env:HOME -ItemType 'file' -Value @"
 machine $(([uri]$repo.links.clone[0].href).Host)
 login $($conn.Credential.UserName)
