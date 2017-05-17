@@ -108,20 +108,34 @@ function tag-practice
     #move into the test drive
     $testDrive = ni -Name 'TestDrive' -ItemType 'Directory'
     Set-Location '.\TestDrive'
+
+    #create netrc
+    $netrcFile = New-Item -Name '_netrc' -Path $env:HOME -ItemType 'file' -Value @"
+machine $(([uri]$repo.links.clone[0].href).Host)
+login $($conn.Credential.UserName)
+password $($conn.Credential.GetNetworkCredential().Password)
+"@
+
     #clone the repo
     #either figure out how to configure the permissions or make it so that anyone can commit
-    git clone $repo.links.clone[1].href
+    git clone $repo.links.clone[0].href
+    
     #create a new file
     $newFile = ni -Name 'fubarFile' -ItemType 'file'
+    
     #commit and push the new file to the new cloned repo
     git add $newFile
     git commit -am 'adding new file'
+    
+    #get the commit hash
+    $commitHash = git rev-parse HEAD
     git push
+    
     #tag the commit
-    #will probably have to figure out how to access the SHA1 here
+    
     $newTag = @{
         name = "myTag"
-        startPoint = "asdfgouihaerg"
+        startPoint = $commitHash
         message = "this is my message"
                 }
     $something = $newTag | Invoke-BBServerRestMethod -Connection $conn -Method Post -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $key, $name)
