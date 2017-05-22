@@ -1,15 +1,4 @@
-﻿# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+﻿
 Set-StrictMode -Version 'Latest'
 
 function New-BBServerTag
@@ -44,7 +33,13 @@ function New-BBServerTag
  
         [string]
         # An optional message for the commit that creates the tag.
-        $Message = ""
+        $Message = "",
+
+        [Switch]
+        $Force,
+
+        [String]
+        $Type = "LIGHTWEIGHT"
  
     )
  
@@ -52,12 +47,15 @@ function New-BBServerTag
  
     #Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
     $tag = @{
-                force = "true"
                 name = $Name
                 startPoint = $CommitID
                 message = $Message
-                type = "ANNOTATED"
+                type = $Type
                 }
+    if( $Force )
+    {
+        $tag['force'] = "true"
+    }
 
     $result = $tag | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $ProjectKey, $RepositoryKey)
     if (-not $result)

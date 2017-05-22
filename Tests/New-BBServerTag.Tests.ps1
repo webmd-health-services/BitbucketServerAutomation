@@ -1,15 +1,4 @@
-﻿# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# 
-#     http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+﻿
 Set-StrictMode -Version 'Latest'
 #Requires -Version 4
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
@@ -89,7 +78,6 @@ function GivenAValidCommit
     git push --set-upstream $cloneRepo master | Out-Null
 
     return $commitHash
-
 }
 
 function WhenTaggingTheCommit
@@ -102,13 +90,27 @@ function WhenTaggingTheCommit
         $TagName,
 
         [String]
-        $Message
+        $Message,
+
+        [Switch]
+        $Force,
+
+        [String]
+        $Type
     )
 
     $optionalParams = @{}
-    if ($Message)
+    if($Message)
     {
         $optionalParams['Message'] = $Message
+    }
+    if($Force)
+    {
+        $optionalParams['Force'] = $true
+    }
+    if($Type)
+    {
+        $optionalParams['Type'] = $Type
     }
     $global:Error.Clear()
     try
@@ -125,8 +127,16 @@ function WhenTaggingTheCommit
 function ThenTheCommitShouldBeTagged
 {
     param(
-        $TagResult
+        [bool]
+        $TagResult,
+
+        [String]
+        $TagName,
+
+        [String]
+        $CommitHash
     )
+
 
     it 'should not throw any errors' {
         $Global:Error | Should BeNullOrEmpty
@@ -134,12 +144,13 @@ function ThenTheCommitShouldBeTagged
     it 'should successfully tag the commit' {
         $TagResult | Should be $true
     }
-    <#
-    TODO: implement a way of checking to see that the remote repo was tagged with the appropriate tag.
-    it ('should apply the {0} tag in the remote repo' -f $TagName) {
-        #not sure how to verify the tag yet outside the scope of the function yet. Get-Tag?
+    
+    git fetch --all | Out-Null
+    $tags = git tag --points-at $CommitHash
+
+    it ('should apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
+        $tags | Should match $TagName
     }
-    #>
 }
 
 function ThenTheCommitShouldNotBeTagged
@@ -149,8 +160,10 @@ function ThenTheCommitShouldNotBeTagged
         $ErrorMessage,
         
         [Bool]
-        $TagResult 
+        $TagResult,
         
+        [String]
+        $CommitHash        
     )
 
     it 'should throw errors' {
@@ -160,12 +173,13 @@ function ThenTheCommitShouldNotBeTagged
     it 'should not successfully tag the commit' {
         $TagResult | Should Be $false
     }
-    <#
-    TODO: implement a way of checking to see that the remote repo was tagged with the appropriate tag.
-    it ('should not apply the {0} tag in the remote repo' -f $TagName) {
-        #not sure how to verify the tag yet outside the scope of the function yet. Get-Tag?
+ 
+    git fetch --all | Out-Null
+    $tags = git tag --points-at $CommitHash
+ 
+    it ('should not apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
+        $tags | Should BeNullOrEmpty 
     }
-    #>
     
 }
 
@@ -174,7 +188,7 @@ Describe 'New-BBServerTag.when tagging a new commit' {
     $tagMessage = 'message'
     $commit = GivenAValidCommit
     $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldBeTagged -TagResult $result
+    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $commit
 }
 
 Describe 'New-BBServerTag.when tagging an invalid commit' {
@@ -183,7 +197,7 @@ Describe 'New-BBServerTag.when tagging an invalid commit' {
     $commit = 'notactuallyacommithash'
     $error = ("'{0}' is an invalid tag point." -f $commit)
     $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldNotBeTagged -TagResult $result -ErrorMessage $error
+    ThenTheCommitShouldNotBeTagged -TagResult $result -ErrorMessage $error -CommitHash $commit
 }
 
 Describe 'New-BBServerTag.when re-tagging a new commit that already has a tag' {
@@ -191,7 +205,7 @@ Describe 'New-BBServerTag.when re-tagging a new commit that already has a tag' {
     $commit = GivenAValidCommit
     WhenTaggingTheCommit -CommitHash $commit -TagName 'v1.4' -Message $tagMessage
     $result = WhenTaggingTheCommit -CommitHash $commit -TagName 'v1.5' -Message $tagMessage
-    ThenTheCommitShouldBeTagged -TagResult $result
+    ThenTheCommitShouldBeTagged -TagResult $result -TagName 'v1.5' -CommitHash $commit
 }
 
 Describe 'New-BBServerTag.when tagging two commits with the same tag' {
@@ -199,9 +213,38 @@ Describe 'New-BBServerTag.when tagging two commits with the same tag' {
     $tagName = 'v1.4'
     $firstcommit = GivenAValidCommit
     $secondcommit = GivenAValidCommit
+    $error = ("Tag '{0}' already exists in repository" -f $tagName)
     WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
     $result = WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldBeTagged -TagResult $result
+    ThenTheCommitShouldNotBeTagged -TagResult $result -ErrorMessage $error -CommitHash $secondcommit
+}
+
+Describe 'New-BBServerTag.when tagging two commits with the same tag and including the Force switch' {
+    $tagMessage = 'message'
+    $tagName = 'v1.4'
+    $firstcommit = GivenAValidCommit
+    $secondcommit = GivenAValidCommit
+    $error = ("Tag '{0}' already exists in repository" -f $tagName)
+    WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
+    $result = WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage -Force
+    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $secondcommit
+}
+
+Describe 'New-BBServerTag.when tagging a new commit with an Annotated Tag' {
+    $tagName = 'v1.4'
+    $tagMessage = 'message'
+    $commit = GivenAValidCommit
+    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'ANNOTATED' -Force
+    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $commit
+}
+
+Describe 'New-BBServerTag.when tagging a new commit with an Invalid Tag type' {
+    $tagName = 'v1.4'
+    $tagMessage = 'message'
+    $commit = GivenAValidCommit
+    $error = 'An error occurred while processing the request. Check the server logs for more information.'
+    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID'
+    ThenTheCommitShouldNotBeTagged -TagResult $result -TagName $tagName -CommitHash $commit -ErrorMessage $error
 }
 
 #teardown
