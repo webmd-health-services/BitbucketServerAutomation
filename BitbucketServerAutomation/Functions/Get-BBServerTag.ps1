@@ -10,7 +10,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function Get-BBServerTag
+function Get-BBServerTag 
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [object]
+        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
+        $Connection,    
+  
+        [Parameter(Mandatory=$true)]
+        [string]
+        # The key of the repository's project.
+        $ProjectKey,
+ 
+        [Parameter(Mandatory=$true)]
+        [string]
+        # The key of the repository.
+        $RepositoryKey
 
+    )
+  
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    
+    $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $ProjectKey, $RepositoryKey)
+    if (-not $result)
+    {
+        throw ("Unable to obtain BitBucket Server tags for project {0} in {1}." -f $ProjectKey, $RepositoryKey)
+    }
+    return $result
 }
+
+ 
