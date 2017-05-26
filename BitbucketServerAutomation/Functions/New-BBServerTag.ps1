@@ -14,6 +14,30 @@ Set-StrictMode -Version 'Latest'
 
 function New-BBServerTag
 {
+    <#
+    .SYNOPSIS
+    Creates a new Version Tag on a commit in Bitbucket Server.
+
+    .DESCRIPTION
+    The `New-BBServerTag` function creates a new Git Tag with Version information on a commit in Bitbucket Server. It requires a commit to exist in a repository, and a project to exist where the repository should live (all repositories in Bitbucket Server are part of a project).
+
+    By default, the tag will be lightweight and will not contain a tag message. However, those properties can both be overridden with their respective parameters. To add a message to the Tag, utilize the $Message parameter, and if you would prefer to use an annotated tag, use the parameter $Type = 'ANNOTATED'
+
+    Use the `New-BBServerConnection` function to generate the connection object, `New-BBServerRepository` to generate the repository object, and `New-BBServerProject` to generate the project, which should be passed in as the `$Connection`, `$RepositoryKey`, and `$ProjectKey` parameters.
+
+    The `$Force` parameter will allow the user to force the tag to be generated for that commit regardless of the tags use on other commits in the repo.
+
+    .EXAMPLE
+    New-BBServerTag -Connection $conn -ProjectKey $key -RepositoryKey $repoName -name $TagName -CommitID $commitHash
+
+    Demonstrates the default behavior of tagging a commit with a version tag.
+
+    .EXAMPLE
+    New-BBServerTag -Connection $conn -ProjectKey $key -RepositoryKey $repoName -name $TagName -CommitID $commitHash -Message 'Tag Message' -Force -Type 'ANNOTATED'
+
+    Demonstrates how to tag a commit with an annotated tag containing a tag message with the force parameter enabled.
+    #>
+
     [CmdletBinding()]
     param(
  

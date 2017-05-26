@@ -119,7 +119,7 @@ function ThenTagsShouldBeObtained
 }
 
 Describe 'Get-BBServerTag when getting multiple tags in a repository' {
-    $numTags = 10
+    $numTags = 5
     GivenARepositoryWithTaggedCommits -WithNumberOfTags $numTags
     $tags = WhenGettingTags
     ThenTagsShouldBeObtained -WithTags $tags -NumberOfTags $numTags
