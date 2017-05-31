@@ -136,9 +136,6 @@ function ThenTheCommitShouldNotBeTagged
         [String]
         $ErrorMessage,
         
-        [Bool]
-        $TagResult,
-        
         [String]
         $CommitHash        
     )
@@ -146,9 +143,6 @@ function ThenTheCommitShouldNotBeTagged
     it 'should throw errors' {
         $Global:Error[0] | Should match 'Unable to tag commit'
         $Global:Error[1] | Should match $ErrorMessage
-    }
-    it 'should not successfully tag the commit' {
-        $TagResult | Should Be $false
     }
  
     git fetch --all | Out-Null
@@ -173,8 +167,8 @@ Describe 'New-BBServerTag.when tagging an invalid commit' {
     $tagMessage = 'message'
     $commit = 'notactuallyacommithash'
     $error = ("'{0}' is an invalid tag point." -f $commit)
-    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldNotBeTagged -TagResult $result -ErrorMessage $error -CommitHash $commit
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
+    ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $commit
 }
 
 Describe 'New-BBServerTag.when re-tagging a new commit that already has a tag' {
@@ -192,8 +186,8 @@ Describe 'New-BBServerTag.when tagging two commits with the same tag' {
     $secondcommit = GivenAValidCommit
     $error = ("Tag '{0}' already exists in repository" -f $tagName)
     WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
-    $result = WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldNotBeTagged -TagResult $result -ErrorMessage $error -CommitHash $secondcommit
+    WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage
+    ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $secondcommit
 }
 
 Describe 'New-BBServerTag.when tagging two commits with the same tag and including the Force switch' {
@@ -220,8 +214,8 @@ Describe 'New-BBServerTag.when tagging a new commit with an Invalid Tag type' {
     $tagMessage = 'message'
     $commit = GivenAValidCommit
     $error = 'An error occurred while processing the request. Check the server logs for more information.'
-    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID'
-    ThenTheCommitShouldNotBeTagged -TagResult $result -TagName $tagName -CommitHash $commit -ErrorMessage $error
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID'
+    ThenTheCommitShouldNotBeTagged -TagName $tagName -CommitHash $commit -ErrorMessage $error
 }
 
 #teardown

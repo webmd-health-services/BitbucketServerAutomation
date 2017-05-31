@@ -10,8 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Set-StrictMode -Version 'Latest'
-
 function New-BBServerTag
 {
     <#
@@ -95,7 +93,7 @@ function New-BBServerTag
     $result = $tag | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $ProjectKey, $RepositoryKey)
     if (-not $result)
     {
-        throw ("Unable to tag commit {0} with {1}." -f $CommitID, $Name)
+        Write-Error ("Unable to tag commit {0} with {1}." -f $CommitID, $Name)
     }
 }
  

@@ -99,10 +99,6 @@ function ThenTagsShouldBeObtained
         [String]
         $WithTagNamed
     )
-    if( $NumberOfTags -gt 25 )
-    {
-        $NumberOfTags = 25
-    }
     if( $WithTagNamed )
     {
         It ('should have named the tag {0}' -f $WithTagNamed) {
@@ -118,14 +114,14 @@ function ThenTagsShouldBeObtained
     }
 }
 
-Describe 'Get-BBServerTag when getting multiple tags in a repository' {
-    $numTags = 5
+Describe 'Get-BBServerTag when getting more tags than the default limit' {
+    $numTags = 26
     GivenARepositoryWithTaggedCommits -WithNumberOfTags $numTags
     $tags = WhenGettingTags
     ThenTagsShouldBeObtained -WithTags $tags -NumberOfTags $numTags
 }
 
-Describe 'Get-BBServerTag when getting the most recent tag tag' {
+Describe 'Get-BBServerTag when getting the most recent tag' {
     $tagName ="thisIsTheMostRecentTag"
     GivenARepositoryWithTaggedCommits -WithTagNamed $tagName
     $tags = WhenGettingTags
