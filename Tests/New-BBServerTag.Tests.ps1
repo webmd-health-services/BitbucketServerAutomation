@@ -25,6 +25,8 @@ $global:commitNumber = 0
 $gitVersion = git --version
 Write-Debug -Message ('git version = {0}' -f $gitVersion)
 Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
+Write-Verbose -Message ('git version = {0}' -f $gitVersion)
+Write-Verbose -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 #create netrc file to maintain credentials for commit and push
 $netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'file' -Value @"
 machine $(([uri]$cloneRepo).Host)
@@ -32,6 +34,7 @@ login $($conn.Credential.UserName)
 password $($conn.Credential.GetNetworkCredential().Password)
 "@
 Write-Debug -Message ('Should place .netrc: {0}' -f $netrcFile)
+Write-Verbose -Message ('Should place .netrc: {0}' -f $netrcFile)
 <#
     Don't forget that we've created a bunch of projects on BBServer that will likely need to be removed? Not sure about that 
     though, as my local instance of BBserver probably doesn't have any effect on the outside world.
