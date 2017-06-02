@@ -23,6 +23,7 @@ $repository = New-BBServerRepository -Connection $conn -ProjectKey $key -Name $r
 $cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
 $global:commitNumber = 0
 $gitVersion = git --version
+$DebugPreference = 'Continue' 
 Write-Debug -Message ('git version = {0}' -f $gitVersion)
 Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 Write-Verbose -Message ('git version = {0}' -f $gitVersion)

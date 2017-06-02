@@ -23,6 +23,11 @@ $project = New-BBServerProject -Connection $conn -Key $key -Name $repoName -Desc
 $repository = New-BBServerRepository -Connection $conn -ProjectKey $key -Name $repoName
 $cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
 $global:commitNumber = 0
+$gitVersion = git --version
+$DebugPreference = 'Continue' 
+
+Write-Debug -Message ('git version = {0}' -f $gitVersion)
+Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 Write-Verbose -Message ('git version = {0}' -f $gitVersion)
 Write-Verbose -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 #create netrc file to maintain credentials for commit and push
@@ -32,6 +37,7 @@ login $($conn.Credential.UserName)
 password $($conn.Credential.GetNetworkCredential().Password)
 "@
 Write-Verbose -Message ('Should place .netrc: {0}' -f $netrcFile)
+Write-Debug -Message ('Should place .netrc: {0}' -f $netrcFile)
 
 function GivenARepositoryWithTaggedCommits
 {
