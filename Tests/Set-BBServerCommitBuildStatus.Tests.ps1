@@ -110,3 +110,9 @@ Describe 'Set-BBServerCommitBuildStatus.when called from an unsupported build se
     Set-BBServerCommitBuildStatus -Connection $conn -Status Successful @buildEnv
     Assert-StatusUpdatedTo Successful -FromEnvironment $buildEnv
 }
+
+Describe 'Set-BBServerCommitBuildStatus.when user passes build information' {
+    $buildInfo = @{ CommitID = 'deadbeedeadbeedeadbeedeadbeedeadbeedeadb' ; Key = 'build_id' ; BuildUri = 'http://example.com/' ; Name = 'fubarsnafu' ; Description = 'snafufubar' }
+    Set-BBServerCommitBuildStatus -Connection $conn -Status InProgress @buildInfo
+    Assert-StatusUpdatedTo InProgress -FromEnvironment $buildInfo
+}

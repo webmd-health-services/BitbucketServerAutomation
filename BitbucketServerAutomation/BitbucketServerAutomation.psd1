@@ -131,7 +131,9 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 * Added `Get-BBServerTag` function for getting tags in a repository.
 * Added `New-BBServerProject` function for creating projects.
 * Added `New-BBServerTag` function for creating tags in a repository.
-* `Set-BBServerCommitBuildStatus` uses the `GIT_COMMIT` environment variable (instead of `JENKINS_URL`) when detecting whether or not it is running under a build server.
+
+# Bug Fixes
+* `Set-BBServerCommitBuildStatus` ignores parameter values when they are passed, i.e. it only works when run under Jenkins.
 '@
 
         } # End of PSData hashtable
