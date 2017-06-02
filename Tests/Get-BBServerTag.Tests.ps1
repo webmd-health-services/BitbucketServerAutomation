@@ -16,7 +16,6 @@ Set-StrictMode -Version 'Latest'
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 #setup
-Push-Location
 $conn = New-BBServerTestConnection
 $key,$repoName = New-TestProjectInfo
 $project = New-BBServerProject -Connection $conn -Key $key -Name $repoName -Description 'description'
@@ -48,43 +47,51 @@ function GivenARepositoryWithTaggedCommits
         [String]
         $WithTagNamed
     )
-    Set-Location $TestDrive.FullName
-    git init | Out-Null
-    #clone, commit and push a new file to the new repo
-    git clone $cloneRepo
-    git remote add origin $cloneRepo
-    git pull origin master | Out-Null
-    $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
-    git add $newFile
-    git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) | Out-Null
-    
-    #get the HEAD commit hash
-    $commitHash = git rev-parse HEAD
-    
-    git push --set-upstream $cloneRepo master | Out-Null
 
-    if( $WithNumberOfTags )
+    Push-Location $TestDrive.FullName
+    try
     {
-        for( $idx = 0; $idx -lt $WithNumberOfTags; ++$idx )
-        {
-            $newFile = New-Item -Name ('newfile{0}' -f $idx) -ItemType 'file' -Force -Value ('new file # {0}!!' -f $idx)
-            git add $newFile
-            git commit -m ('adding file, commit no {0} for project-key: {1}' -f $idx, $key) | Out-Null
-            $commitHash = git rev-parse HEAD
-            git push | Out-Null
+        git init 2>&1 | Write-Debug
+        #clone, commit and push a new file to the new repo
+        git clone $cloneRepo 2>&1 | Write-Debug
+        git remote add origin $cloneRepo 2>&1 | Write-Debug
+        git pull origin master 2>&1 | Write-Debug
+        $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
+        git add $newFile 2>&1 | Write-Debug
+        git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) 2>&1 | Write-Debug
+    
+        #get the HEAD commit hash
+        $commitHash = git rev-parse HEAD 2>$null
+    
+        git push --set-upstream $cloneRepo master 2>&1 | Write-Debug
 
-            New-BBServerTag -Connection $conn -ProjectKey $key -Name $idx -CommitID $commitHash -RepositoryKey $repoName
+        if( $WithNumberOfTags )
+        {
+            for( $idx = 0; $idx -lt $WithNumberOfTags; ++$idx )
+            {
+                $newFile = New-Item -Name ('newfile{0}' -f $idx) -ItemType 'file' -Force -Value ('new file # {0}!!' -f $idx)
+                git add $newFile 2>&1 | Write-Debug
+                git commit -m ('adding file, commit no {0} for project-key: {1}' -f $idx, $key) 2>&1 | Write-Debug
+                $commitHash = git rev-parse HEAD 2>$null
+                git push 2>&1 | Write-Debug
+
+                New-BBServerTag -Connection $conn -ProjectKey $key -Name $idx -CommitID $commitHash -RepositoryKey $repoName
+            }
+        }
+        if( $WithTagNamed )
+        {
+            $newFile = New-Item -Name 'newfile' -ItemType 'file' -Force -Value 'new file!!'
+            git add $newFile 2>&1 | Write-Debug
+            git commit -m ('adding file, commit for project-key: {0}' -f $key) 2>&1 | Write-Debug
+            $commitHash = git rev-parse HEAD 2>$null
+            git push 2>&1 | Write-Debug
+
+            New-BBServerTag -Connection $conn -ProjectKey $key -Name $WithTagNamed -CommitID $commitHash -RepositoryKey $repoName
         }
     }
-    if( $WithTagNamed )
+    finally
     {
-        $newFile = New-Item -Name 'newfile' -ItemType 'file' -Force -Value 'new file!!'
-        git add $newFile
-        git commit -m ('adding file, commit for project-key: {0}' -f $key) | Out-Null
-        $commitHash = git rev-parse HEAD
-        git push | Out-Null
-
-        New-BBServerTag -Connection $conn -ProjectKey $key -Name $WithTagNamed -CommitID $commitHash -RepositoryKey $repoName
+        Pop-Location
     }
 }
 
@@ -137,5 +144,4 @@ Describe 'Get-BBServerTag when getting the most recent tag' {
 }
 
 #teardown
-Pop-Location
 Remove-Item -Path $netrcFile -Force -Recurse
