@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.0'
+    ModuleVersion = '0.1.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -113,19 +113,28 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            Tags = @( 'git', 'bitbucket', 'bitbucket server', 'scm', 'devops', 'pipeline' )
 
             # A URL to the license for this module.
             LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/pshdo/BitbucketServerAutomatio'
+            ProjectUri = 'https://github.com/pshdo/BitbucketServerAutomation'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = @'
+# Enhancements
+
+* Added `Get-BBServerCommitBuildStatus` function for getting the build status of a commit.
+* Added `Get-BBServerProject` function for getting projects.
+* Added `Get-BBServerTag` function for getting tags in a repository.
+* Added `New-BBServerProject` function for creating projects.
+* Added `New-BBServerTag` function for creating tags in a repository.
+* `Set-BBServerCommitBuildStatus` uses the `GIT_COMMIT` environment variable (instead of `JENKINS_URL`) when detecting whether or not it is running under a build server.
+'@
 
         } # End of PSData hashtable
 
