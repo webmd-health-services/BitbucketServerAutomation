@@ -31,7 +31,7 @@ Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 Write-Verbose -Message ('git version = {0}' -f $gitVersion)
 Write-Verbose -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 #create netrc file to maintain credentials for commit and push
-$netrcFile = New-Item -Name '_netrc' -Force -Path $env:HOME -ItemType 'file' -Value @"
+$netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'file' -Value @"
 machine $(([uri]$cloneRepo).Host)
 login $($conn.Credential.UserName)
 password $($conn.Credential.GetNetworkCredential().Password)
