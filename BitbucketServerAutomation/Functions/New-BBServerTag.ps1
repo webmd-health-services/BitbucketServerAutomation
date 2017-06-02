@@ -77,8 +77,8 @@ function New-BBServerTag
     )
  
     Set-StrictMode -Version 'Latest'
- 
-    #Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
     $tag = @{
                 name = $Name
                 startPoint = $CommitID
