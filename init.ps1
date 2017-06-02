@@ -53,7 +53,7 @@ foreach( $moduleName in @( 'Pester', 'Carbon', 'LibGit2' ) )
     }
 }
 
-$chocoPath = Get-Command -Name 'choco.exe' -ErrorAction Ignore | Select-Object -ExpandProperty 'Source' 
+$chocoPath = Get-Command -Name 'choco.exe' -ErrorAction Ignore | Select-Object -ExpandProperty 'Path' 
 if( -not $chocoPath )
 {
     Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -UseBasicParsing | Invoke-Expression
@@ -152,10 +152,10 @@ $bbPropertiesPath = Join-Path -Path $bitbucketHomePath -ChildPath 'shared\bitbuc
 $bbServerUri = 'http://{0}:7990/' -f $env:COMPUTERNAME.ToLowerInvariant()
 if( -not (Test-Path -Path $bbPropertiesPath -PathType Leaf) )
 {
-    $licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense' -Resolve
-    if( -not $licensePath )
+    $licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense'
+    if( -not (Test-Path -Path $licensePath -PathType Leaf) )
     {
-        Write-Error -Message ('Bitbucket Server license file ''{0}'' does not exist. Atlassian has donated a license to the project for use in automated tests. If you are a trusted contributor to the project, please request a copy of this license from the project owners and maintainers. Otherwise, please request a trial/evaluation license from Atlassian.')
+        Write-Error -Message ('Bitbucket Server license file ''{0}'' does not exist. Atlassian has donated a license to the project for use in automated tests. If you are a trusted contributor to the project, please request a copy of this license from the project owners and maintainers. Otherwise, please request a trial/evaluation license from Atlassian.' -f $licensePath)
         return
     }
 
