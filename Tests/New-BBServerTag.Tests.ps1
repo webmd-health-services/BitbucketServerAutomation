@@ -19,10 +19,9 @@ Push-Location
 $conn = New-BBServerTestConnection
 $key,$repoName = New-TestProjectInfo
 $project = New-BBServerProject -Connection $conn -Key $key -Name $repoName -Description 'description'
-$repository = New-BBServerRepository -Connection $conn -ProjectKey $key -Name $repoName
-$cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
+$repository = $null
 $global:commitNumber = 0
-$gitVersion = git --version
+$gitVersion = git --version 2>&1
 $DebugPreference = 'Continue' 
 Write-Debug -Message ('git version = {0}' -f $gitVersion)
 Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
@@ -30,7 +29,7 @@ Write-Verbose -Message ('git version = {0}' -f $gitVersion)
 Write-Verbose -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
 #create netrc file to maintain credentials for commit and push
 $netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'file' -Value @"
-machine $(([uri]$cloneRepo).Host)
+machine $($env:COMPUTERNAME)
 login $($conn.Credential.UserName)
 password $($conn.Credential.GetNetworkCredential().Password)
 "@
@@ -43,28 +42,66 @@ Write-Verbose -Message ('Should place .netrc: {0}' -f $netrcFile)
     To access BBserver, get the login info from the _netrc file in the env:home directory. The browse URL is contained in the repo.links
 #>
 
+function GivenARepository
+{
+    Push-Location $TestDrive.FullName
+    try
+    {
+        $script:repoName = '{0}-{1}' -f ($PSCommandPath | Split-Path -Leaf),[IO.Path]::GetRandomFileName()
+        $script:repository = New-BBServerRepository -Connection $conn -Name $repoName -ProjectKey $key -Verbose
+        $cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
+        git init 2>&1 | Write-Debug
+        #clone, commit and push a new file to the new repo
+        git clone $cloneRepo 2>&1 | Write-Debug
+        git remote add origin $cloneRepo 2>&1 | Write-Debug
+        git pull origin master 2>&1 | Write-Debug
+        $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
+        git add $newFile 2>&1 | Write-Debug
+        git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) 2>&1 | Write-Debug
+    
+        #get the HEAD commit hash
+        $commitHash = git rev-parse HEAD 2>&1
+    
+        git push --set-upstream $cloneRepo master 2>&1 | Write-Debug 
+
+        return $commitHash
+    }
+    finally
+    {
+        Pop-Location
+    }
+}
+
 function GivenAValidCommit
 {
-    Set-Location $TestDrive.FullName
-    git init | Out-Null
-    #clone, commit and push a new file to the new repo
-    git clone $cloneRepo
-    git remote add origin $cloneRepo
-    git pull origin master | Out-Null
-    $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
-    git add $newFile
-    git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) | Out-Null
+    Push-Location $TestDrive.FullName
+    try
+    {
+        if( -not (git rev-parse HEAD 2>$null) )
+        {
+            GivenARepository | Write-Debug
+        }
+        
+        $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
+        git add $newFile 2>&1 | Write-Debug
+        git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) 2>&1 | Write-Debug
     
-    #get the HEAD commit hash
-    $commitHash = git rev-parse HEAD
+        #get the HEAD commit hash
+        $commitHash = git rev-parse HEAD 2>&1
     
-    git push --set-upstream $cloneRepo master | Out-Null
+        git push origin master 2>&1 | Write-Debug 
 
-    return $commitHash
+        return $commitHash
+    }
+    finally
+    {
+        Pop-Location
+    }
 }
 
 function WhenTaggingTheCommit
 {
+    [CmdletBinding()]
     param(
         [String]
         $CommitHash,
@@ -120,19 +157,26 @@ function ThenTheCommitShouldBeTagged
         $CommitHash
     )
 
-
-    it 'should not throw any errors' {
-        $Global:Error | Should BeNullOrEmpty
-    }
-    it 'should successfully tag the commit' {
-        $TagResult | Should be $true
-    }
+    Push-Location $TestDrive.FullName
+    try
+    {
+        it 'should not throw any errors' {
+            $Global:Error | Should BeNullOrEmpty
+        }
+        it 'should successfully tag the commit' {
+            $TagResult | Should be $true
+        }
     
-    git fetch --all | Out-Null
-    $tags = git tag --points-at $CommitHash
+        git fetch --all 2>&1 | Write-Debug
+        $tags = git tag --points-at $CommitHash 2>&1
 
-    it ('should apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
-        $tags | Should match $TagName
+        it ('should apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
+            $tags | Where-Object { $_ -match $TagName } | Should -Not -BeNullOrEmpty
+        }
+    }
+    finally
+    {
+        Pop-Location
     }
 }
 
@@ -151,8 +195,8 @@ function ThenTheCommitShouldNotBeTagged
         $Global:Error[1] | Should match $ErrorMessage
     }
  
-    git fetch --all | Out-Null
-    $tags = git tag --points-at $CommitHash
+    git fetch --all 2>&1 | Write-Debug
+    $tags = git tag --points-at $CommitHash 2>$null
  
     it ('should not apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
         $tags | Should BeNullOrEmpty 
@@ -173,7 +217,7 @@ Describe 'New-BBServerTag.when tagging an invalid commit' {
     $tagMessage = 'message'
     $commit = 'notactuallyacommithash'
     $error = ("'{0}' is an invalid tag point." -f $commit)
-    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -ErrorAction SilentlyContinue
     ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $commit
 }
 
@@ -191,8 +235,8 @@ Describe 'New-BBServerTag.when tagging two commits with the same tag' {
     $firstcommit = GivenAValidCommit
     $secondcommit = GivenAValidCommit
     $error = ("Tag '{0}' already exists in repository" -f $tagName)
-    WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
-    WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage
+    WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage 
+    WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage -ErrorAction SilentlyContinue
     ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $secondcommit
 }
 
@@ -220,7 +264,7 @@ Describe 'New-BBServerTag.when tagging a new commit with an Invalid Tag type' {
     $tagMessage = 'message'
     $commit = GivenAValidCommit
     $error = 'An error occurred while processing the request. Check the server logs for more information.'
-    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID'
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID' -ErrorAction SilentlyContinue
     ThenTheCommitShouldNotBeTagged -TagName $tagName -CommitHash $commit -ErrorMessage $error
 }
 
