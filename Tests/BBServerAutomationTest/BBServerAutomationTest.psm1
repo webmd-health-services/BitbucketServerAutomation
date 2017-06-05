@@ -58,3 +58,11 @@ function Remove-BBServerTestRepository
 
     Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection
 }
+
+function New-TestProjectInfo
+{
+    $key = ([IO.Path]::GetRandomFileName()) -replace '[^A-Za-z0-9_]','_'
+    $key -replace '^\d+',''
+    'New-BBServerProject-New-Project-{0}' -f [IO.Path]::GetRandomFileName()
+}
+
