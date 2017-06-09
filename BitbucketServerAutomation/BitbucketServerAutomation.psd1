@@ -111,7 +111,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @( 'git', 'bitbucket', 'bitbucket-server', 'scm', 'devops', 'pipeline' )
+            Tags = @( 'git', 'bitbucket', 'bitbucket-server', 'scm', 'devops', 'pipeline', 'atlassian' )
 
             # A URL to the license for this module.
             LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
