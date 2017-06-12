@@ -76,6 +76,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # Functions to export from this module
     FunctionsToExport = @( 
                             'Get-BBServerCommitBuildStatus',
+                            'Get-BBServerFile',
                             'Get-BBServerProject',
                             'Get-BBServerRepository', 
                             'Get-BBServerTag',
