@@ -24,7 +24,9 @@ function Get-BBServerFile
     If you pass a name, the search will only return that match the criteria. Wildcards are allowed to search for files. Wildcard matching is *not* supported by the Bitbucket Server API, so all files must be retrieved and searched.
 
     .EXAMPLE
+    Get-BBServerFile -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo'
 
+    Demonstrates how to get a list of all the files `TestRepo` repository.
     #>
     [CmdletBinding()]
     param(
