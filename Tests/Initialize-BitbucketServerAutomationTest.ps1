@@ -19,3 +19,11 @@ if( (Get-Module -Name 'BBServerAutomationTest') )
 }
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'BBServerAutomationTest\BBServerAutomationTest.psm1' -Resolve)
+
+$bbConnection = New-BBServerTestConnection
+$netrcConfig = @"
+machine $($env:COMPUTERNAME)
+login $($bbConnection.Credential.UserName)
+password $($bbConnection.Credential.GetNetworkCredential().Password)
+"@
+$netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'File' -Value $netrcConfig

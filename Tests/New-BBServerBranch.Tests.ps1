@@ -34,16 +34,16 @@ function GivenARepository
     {
         $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $env:TEMP -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
         New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
             
         Push-Location -Path $tempRepoRoot
         try
         {
-            git clone $repoClonePath $repoName
+            git clone $repoClonePath $repoName 2>&1
             cd $repoName
-            git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests'
-            git push -u origin
+            git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests' 2>&1
+            git push -u origin 2>&1
         }
         finally
         {

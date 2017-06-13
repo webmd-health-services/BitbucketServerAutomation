@@ -39,20 +39,20 @@ function GivenARepositoryWithFiles
     {
         $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $env:TEMP -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
         New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
             
         Push-Location -Path $tempRepoRoot
         try
         {
-            git clone $repoClonePath $repoName
+            git clone $repoClonePath $repoName 2>&1
             cd $repoName
             $initialFileList | ForEach-Object {
-                New-Item -Path $_ -ItemType 'File' -Force 2>&1 | Out-Null
+                New-Item -Path $_ -ItemType 'File' -Force
             }
-            git add .
-            git commit -m 'Staging test files for `Get-BBServerFile` tests'
-            git push -u origin
+            git add . 2>&1
+            git commit -m 'Staging test files for `Get-BBServerFile` tests' 2>&1
+            git push -u origin 2>&1
         }
         finally
         {
