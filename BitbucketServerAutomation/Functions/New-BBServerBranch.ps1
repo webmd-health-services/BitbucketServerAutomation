@@ -64,7 +64,7 @@ function New-BBServerBranch
     }
 
     $newBranchConfig = @{ name = $BranchName ; startPoint = $StartPoint }
-    $newBranch = Invoke-BBServerRestMethod -Connection $bbConnection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath -InputObject $newBranchConfig
+    $newBranch = Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath -InputObject $newBranchConfig
 
     return $newBranch
 }

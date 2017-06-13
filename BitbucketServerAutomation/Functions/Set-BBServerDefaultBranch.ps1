@@ -59,7 +59,7 @@ function Set-BBServerDefaultBranch
     }
     
     $defaultBranchConfig = @{ id = $getCurrentBranch.id }
-    $setDefaultBranch = Invoke-BBServerRestMethod -Connection $bbConnection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $defaultBranchConfig
+    $setDefaultBranch = Invoke-BBServerRestMethod -Connection $Connection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $defaultBranchConfig
     
     $getCurrentBranch = Get-BBServerBranch -Connection $Connection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $BranchName
     return $getCurrentBranch
