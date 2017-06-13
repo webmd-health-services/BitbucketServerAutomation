@@ -37,7 +37,7 @@ function Get-BBServerFile
 
         [Parameter(Mandatory=$true)]
         [string]
-        # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
+        # The key/ID that identifies the project where the repository resides. This is *not* the project name.
         $ProjectKey,
 
         [Parameter(Mandatory=$true)]
