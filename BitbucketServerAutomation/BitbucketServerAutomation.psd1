@@ -75,17 +75,21 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
     # Functions to export from this module
     FunctionsToExport = @( 
+                            'Get-BBServerBranch',
                             'Get-BBServerCommitBuildStatus',
+                            'Get-BBServerFile',
                             'Get-BBServerProject',
                             'Get-BBServerRepository', 
                             'Get-BBServerTag',
                             'Invoke-BBServerRestMethod', 
+                            'New-BBServerBranch',
                             'New-BBServerConnection', 
                             'New-BBServerProject',
                             'New-BBServerRepository', 
                             'New-BBServerTag',
                             'Remove-BBServerRepository',
-                            'Set-BBServerCommitBuildStatus' )
+                            'Set-BBServerCommitBuildStatus',
+                            'Set-BBServerDefaultBranch' )
 
     # Cmdlets to export from this module
     CmdletsToExport = '*'
