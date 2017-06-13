@@ -88,7 +88,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
                             'New-BBServerRepository', 
                             'New-BBServerTag',
                             'Remove-BBServerRepository',
-                            'Set-BBServerCommitBuildStatus' )
+                            'Set-BBServerCommitBuildStatus',
+                            'Set-BBServerDefaultBranch' )
 
     # Cmdlets to export from this module
     CmdletsToExport = '*'
