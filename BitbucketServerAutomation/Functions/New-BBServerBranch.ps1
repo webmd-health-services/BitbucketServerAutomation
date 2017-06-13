@@ -60,7 +60,7 @@ function New-BBServerBranch
     if( $checkBranchExists )
     {
         Write-Error -Message ('A branch with the name ''{0}'' already exists in the ''{1}'' repository. No new branch will be created.' -f $BranchName, $RepoName)
-        exit
+        return
     }
 
     $newBranchConfig = @{ name = $BranchName ; startPoint = $StartPoint }
