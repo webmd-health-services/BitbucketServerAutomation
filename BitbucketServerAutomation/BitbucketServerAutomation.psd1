@@ -121,7 +121,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/pshdo/BitbucketServerAutomation'
+            ProjectUri = 'https://github.com/webmd-health-services/BitbucketServerAutomation'
 
             # A URL to an icon representing this module.
             # IconUri = ''
