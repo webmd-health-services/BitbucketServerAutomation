@@ -117,13 +117,13 @@ function ThenTagsShouldBeObtained
     if( $WithTagNamed )
     {
         It ('should have named the tag {0}' -f $WithTagNamed) {
-            $WithTags.values[0].displayId | should Be $WithTagNamed
+            $WithTags[0].displayId | should Be $WithTagNamed
         }
     }
     else
     {
         It ('should get {0} tags' -f $NumberOfTags) {
-            $WithTags.size | should Be $NumberOfTags
+            $WithTags.Count | should Be $NumberOfTags
         }
         
     }

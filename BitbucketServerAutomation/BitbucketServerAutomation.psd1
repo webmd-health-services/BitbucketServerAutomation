@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.2.0'
+    ModuleVersion = '0.2.1'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -128,12 +128,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-# Enhancements
-
-* New `Get-BBServerBranch` function for getting the branches in a repository.
-* New `Get-BBServerFile` function for getting a file from a repository.
-* New `New-BBServerBranch` function for creating a branch in a repository.
-* New `SEt-BBServerDefaultBranch` function for setting a repository's default branch.
+Fixed: the `Get-BBServerTag` function doesn't return individual tag objects.
 '@
 
         } # End of PSData hashtable
