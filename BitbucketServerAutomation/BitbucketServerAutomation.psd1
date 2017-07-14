@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.2.1'
+    ModuleVersion = '0.2.2'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -128,7 +128,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-Fixed: the `Get-BBServerTag` function doesn't return individual tag objects.
+Fixed: Calling any Bitbucket Server API that has a body in its request fails under PowerShell 5.1.
 '@
 
         } # End of PSData hashtable
