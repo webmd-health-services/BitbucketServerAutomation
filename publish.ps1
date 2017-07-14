@@ -24,6 +24,13 @@ if( -not $manifest )
     return
 }
 
+$filesNotReady = git status --porcelain --ignored $moduleRoot
+if( $filesNotReady )
+{
+    Write-Error -Message ('There are uncommitted changes under BitbucketServerAutomation. Please remove these files or commit them.{0}{1}' -f [Environment]::NewLine,($filesNotReady -join [Environment]::NewLine))
+    return
+}
+
 $privateData = $manifest.PrivateData['PSData']
 
 $nugetKeyPath = Join-Path -Path $PSScriptRoot -ChildPath '.psgallerykey'
