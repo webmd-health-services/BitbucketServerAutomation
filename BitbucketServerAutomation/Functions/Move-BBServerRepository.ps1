@@ -14,32 +14,17 @@ function Move-BBServerRepository
 {
     <#
     .SYNOPSIS
-    Remove a repository from Bitbucket Server.
+    Move a repository in Bitbucket Server from one project to another.
 
     .DESCRIPTION
-    The `Remove-BBServerRepository` deletes a repository from Bitbucket Server. This is a dangerous operation as all related data is also deleted. You will have to confirm the deletion. To force the deletion without being confirmed, use the `Force` switch.
+    The `Move-BBServerRepository` moves a repository in Bitbucket Server.
 
     Use the `New-BBServerConnection` function to create a connection object to pass to the `Connection` parameter.
 
     .EXAMPLE
-    Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'fubarsnafu'
+    Move-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -RepoName 'fubarsnafu' -TargetProjectKey 'BBSA_NEW'
 
-    Demonstrates how to delete a repository. Because deleting a repository is a high-impact operation, you will asked to confirm the deletion.
-
-    .EXAMPLE
-    Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'fubarsnafu' -Force
-
-    Demonstrates how to delete a repository, skipping any confirmation dialogs. This can be dangerous since deletions can't be undone. Use the `Force` switch with care.
-
-    .EXAMPLE
-    Get-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'snafu' | Remove-BBServerRepository -Connection $conn
-
-    Demonstrates that you can pipe objects returned by `Get-BBServerRepository` to `Remove-BBServerRepository`. When you pipe repository objects, you don't have to provide the project key
-
-    .EXAMPLE
-    'fubarsnafu' | Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA'
-
-    Demonstrates that you can pipe repository names to `Remove-BBServerRepository`. When you do, you *must* also provide the project key.
+    Demonstrates how to move the repository 'fubarsnafu' from the 'BBSA' project to the 'BBSA_NEW'
     #>
     [CmdletBinding()]
     param(
@@ -83,7 +68,7 @@ function Move-BBServerRepository
         return
     }
     
-    $currentRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey | Where-Object { $_.name -eq $RepoName }
+    $currentRepo = Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey | Where-Object { $_.name -eq $RepoName }
     if( !$currentRepo )
     {
         Write-Error -Message ('A repository with name ''{0}'' does not exist in the project ''{1}''. Specified respository cannot be moved.' -f $RepoName, $ProjectKey)
