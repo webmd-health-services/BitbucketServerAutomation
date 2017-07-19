@@ -23,13 +23,13 @@ function Set-BBServerPullRequestSetting
     Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 2 -RequiredAllApprovers
 
     Demonstrates how to set the pull request settings in the `TestRepo` repository as follows:
-        Minimum of 2 approvers must approve; All selected approvers must approve; Prior approvals will *not* be removed if the pull request is updated.
+        Minimum of 2 approvers must approve; All selected approvers must approve
 
     .EXAMPLE
-    Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 1 -UnapproveOnUpdate
+    Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 1 -UnapproveOnUpdate $false
 
     Demonstrates how to set the pull request settings in the `TestRepo` repository as follows:
-        Minimum of 1 approver must approve; All selected approvers are *not* required to approve; Prior approvals will be removed if the pull request is updated.
+        Minimum of 1 approver must approve; Prior approvals will *not* be removed if the pull request is updated.
     #>
     [CmdletBinding()]
     param(
