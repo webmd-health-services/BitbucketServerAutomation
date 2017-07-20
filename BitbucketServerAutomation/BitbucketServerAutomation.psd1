@@ -90,6 +90,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
                             'New-BBServerRepository', 
                             'New-BBServerTag',
                             'Remove-BBServerRepository',
+                            'Rename-BBServerRepository',
                             'Set-BBServerCommitBuildStatus',
                             'Set-BBServerDefaultBranch',
                             'Set-BBServerPullRequestSetting' )
@@ -132,8 +133,9 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Added `Get-BBServerPullRequestSetting` function for getting the pull request settings for a repository.
-* Added `Set-BBServerPullRequestSetting` function for setting the pull request settings for a reqpository.
+* Added `Set-BBServerPullRequestSetting` function for setting the pull request settings for a repository.
 * Added `Move-BBServerRepository` function for moving repositories between projects.
+* Added `Rename-BBServerRepository` function for renaming an existing repository.
 '@
 
         } # End of PSData hashtable
