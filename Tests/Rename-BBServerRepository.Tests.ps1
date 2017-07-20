@@ -97,17 +97,6 @@ function ThenRepositoryShouldBeRenamed
     }
 }
 
-function ThenRepositoryShouldNotHaveMoved
-{
-    [CmdletBinding()]
-    param(
-    )
-
-    It 'the specified repository should still exist in the original project' {
-        Get-BBServerRepository -Connection $bbConnection -ProjectKey $sourceProjectKey -Name $repoName -ErrorAction Ignore | Should Not BeNullOrEmpty
-    }
-}
-
 Describe 'Rename-BBServerRepository.when renaming a repository' {
     GivenAProjectWithRepositories $sourceRepoName
     WhenRenamingARepository $sourceRepoName -To $targetRepoName
