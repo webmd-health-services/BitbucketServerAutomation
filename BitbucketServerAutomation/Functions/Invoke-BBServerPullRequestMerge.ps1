@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function New-BBServerPullRequest 
+function Invoke-BBServerPullRequestMerge
 {
     param(        
         [Parameter(Mandatory=$true)]
@@ -25,44 +25,15 @@ function New-BBServerPullRequest
         $RepoName,
         [Parameter(Mandatory=$true)]
         [string]
-        $from,
+        $id,
         [Parameter(Mandatory=$true)]
         [string]
-        $to
+        $version
     )
-
         $body = @{
-            title = ('Automated Deployment from {0} to {1}' -f $from, $to);
-            state = 'OPEN';
-            open = $true;
-            closed = $false;
-            fromRef = @{
-                id = $from;
-                repository = @{
-                    slug = $RepoName;
-                    name = $null;
-                    project = @{
-                        key = $ProjectKey
-                    };
-                };
-            };
-            toRef = @{
-                id = $to;
-                repository = @{
-                    slug = $RepoName;
-                    name = $null;
-                    project = @{
-                        key = $ProjectKey
-                    };
-                };
-            };
-            locked = $false;
-            reviewers = $null;
-            links = @{
-                self = @();
-            };
-        };
-        $resourcePath = ('projects/{0}/repos/{1}/pull-requests' -f $ProjectKey, $RepoName)
+            version = $version;
+        }
+        $resourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}/merge' -f $ProjectKey, $RepoName, $id )
 
         $response = $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
         if( -not $response) {
