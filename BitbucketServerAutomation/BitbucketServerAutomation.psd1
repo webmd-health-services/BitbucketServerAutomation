@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.3.1'
+    ModuleVersion = '0.3.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -132,6 +132,10 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
+* Added `Get-BBServerPullRequestSetting` function for getting the pull request settings for a repository.
+* Added `Set-BBServerPullRequestSetting` function for setting the pull request settings for a repository.
+* Added `Move-BBServerRepository` function for moving repositories between projects.
+* Added `Rename-BBServerRepository` function for renaming an existing repository.
 * Fixed: in some failure scenarios, the web requests error handler fails.
 '@
 
