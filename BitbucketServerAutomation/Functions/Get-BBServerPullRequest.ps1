@@ -34,9 +34,11 @@ function Get-BBServerPullRequest
         # The id of the pull request to get
         $id = "",
 
+        [Parameter(Mandatory=$true)]
         [string]
         $projectKey,
 
+        [Parameter(Mandatory=$true)]
         [string]
         $RepoName        
     )

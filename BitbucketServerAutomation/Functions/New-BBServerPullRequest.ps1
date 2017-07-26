@@ -64,9 +64,5 @@ function New-BBServerPullRequest
         };
         $resourcePath = ('projects/{0}/repos/{1}/pull-requests' -f $ProjectKey, $RepoName)
 
-        $response = $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
-        if( -not $response) {
-            return
-        }
-        return $response
+        return $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
 }

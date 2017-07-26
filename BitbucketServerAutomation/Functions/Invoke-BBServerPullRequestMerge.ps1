@@ -35,9 +35,5 @@ function Invoke-BBServerPullRequestMerge
         }
         $resourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}/merge' -f $ProjectKey, $RepoName, $id )
 
-        $response = $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
-        if( -not $response) {
-            return
-        }
-        return $response
+        return $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
 }
