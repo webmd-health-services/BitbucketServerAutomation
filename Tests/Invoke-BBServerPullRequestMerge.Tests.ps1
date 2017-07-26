@@ -144,6 +144,7 @@ Describe 'Invoke-BBServerPullRequestMerge.when merged with bad version number' {
 
 Describe 'Invoke-BBServerPullRequestMerge.whentrying to merge an invalid pull request' {
     GivenARepository
+    GivenAPullRequest
     GivenABadIdNumber
     WhenThePullRequestIsMerged
     ThenItShouldThrowAnError -expectedError ('com.atlassian.bitbucket.pull.NoSuchPullRequestException: No pull request exists with ID {0} for this repository ' -f $Script:id )
