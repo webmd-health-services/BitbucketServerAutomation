@@ -127,7 +127,7 @@ function WhenThePullRequestIsMerged
 function  ThenItShouldBeMerged
 {
     it ('should be merged into {0}' -f $toBranchName){
-        $pullRequestStatus = Get-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:pullRequest.id
+        $pullRequestStatus = Get-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id
         $pullRequestStatus.state | should -match 'merged'
     }
 }
