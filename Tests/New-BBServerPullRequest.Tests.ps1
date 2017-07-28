@@ -15,6 +15,7 @@ Set-StrictMode -Version 'Latest'
 $projectKey = 'NBBSBRANCH'
 $repoName = 'repositorywithbranches'
 $fromBranchName = 'branch-to-merge'
+$BadFromBranchName = 'this-shouldnt-work'
 $toBranchName = 'destination-branch'
 $title = 'pull-request-title'
 $start = 'master'
@@ -108,11 +109,12 @@ function GivenATag
         Pop-Location
         Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-     New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $Script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
-    write-host (New-BBServerTag -Connection $BBConnection -ProjectKey $ProjectKey -RepositoryKey $RepoName -Name $Name -CommitID $CommitId)
+    New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $Script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
+    New-BBServerTag -Connection $BBConnection -ProjectKey $ProjectKey -RepositoryKey $RepoName -Name $Name -CommitID $CommitId
 }
 function GivenNoFromBranchExists
 {
+
         Pop-Location
         Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
         New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $Script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
@@ -126,7 +128,6 @@ function WhenAPullRequestIsCreated
     )
     $Global:Error.clear()
     $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $From -To 'master' -Title $title
-    write-host $pullRequest
     if($pullRequest) 
     {
         $Script:pullRequest = $pullRequest
@@ -136,7 +137,6 @@ function WhenAPullRequestIsCreated
 function ThenANewPullRequestShouldBeCreated 
 {
     $pullRequest = Get-BBServerPullRequest  -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:pullRequest.id
-    write-host $pullRequest
     it 'should not be null' {
         $pullRequest | Should Not BeNullOrEmpty
     }
@@ -151,8 +151,6 @@ function ThenItShouldThrowAnError
         $expectedError
     )
     it 'should throw an error' {
-        write-host $Global:Error
-        Write-Host $expectedError 
         $Global:Error | Where-Object { $_ -match $expectedError } | Should -not -BeNullOrEmpty
     }
 }
@@ -190,7 +188,7 @@ Describe 'New-BBServerPullRequest.when pull request is made with a destination b
 Describe 'New-BBServerPullRequest.when pull request is made with a from bad branch' {
     GivenARepository
     GivenNoFromBranchExists
-    WhenAPullRequestIsCreated -From $Script:fromBranchName
+    WhenAPullRequestIsCreated -From $Script:BadFromBranchName
     ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $Script:fromBranchName)
 }
 
