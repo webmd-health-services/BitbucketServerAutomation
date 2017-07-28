@@ -12,11 +12,11 @@
 
 Set-StrictMode -Version 'Latest'
 
-$projectKey = 'NBBSBRANCH'
+$projectKey = 'GBBSBRANCH'
 $repoName = 'repositorywithbranches'
 $fromBranchName = 'branch-to-merge'
 $toBranchName = 'destination-branch'
-$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerBranch Tests'
+$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Invoke-BBServerPullRequests Tests'
 $toBranch = $null
 $pullRequest = $null
 $tempRepoRoot = $null
@@ -24,7 +24,9 @@ $version = $null
 $id = $null
 
 function GivenARepository
-{   $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
+{   
+    $Script:pullRequest = $null
+    $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
 
     if ( $getRepo )
     {
@@ -37,21 +39,19 @@ function GivenARepository
     {
         $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $script:tempRepoRoot -ItemType 'Directory' | Out-Null
+        $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
             
-        Push-Location -Path $script:tempRepoRoot
+        Push-Location -Path $Script:tempRepoRoot
         git clone $repoClonePath $repoName 2>&1
         Set-location $repoName
-        git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests' 2>&1
+        git commit --allow-empty -m 'Initializing repository for `Invoke-BBServerPullRequests` tests' 2>&1
         git push -u origin 2>&1
     }
 }
 
 function GivenAPullRequest
-{
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $fromBranchName -StartPoint 'master'
-        
+{      
     try
     {   
         git checkout -b 'branch-to-merge'
@@ -61,14 +61,14 @@ function GivenAPullRequest
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    $script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $Script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
     if($pullRequest)
     {
-        $script:pullRequest = $pullRequest
-        $script:version = $pullRequest.version
+        $Script:pullRequest = $pullRequest
+        $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
     }
 }
@@ -92,23 +92,23 @@ function GivenAPullRequestWithConflicts
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    $script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $Script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
-        if($pullRequest)
+    if($pullRequest)
     {
-        $script:pullRequest = $pullRequest
-        $script:version = $pullRequest.version
+        $Script:pullRequest = $pullRequest
+        $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
     }
 }
 function GivenABadVersionNumber{
-    $script:version = '-1'
+    $Script:version = '-1'
 }
 
 function GivenABadIdNumber {
-    $script:id = '-1'
+    $Script:id = '-1'
 }
 function WhenThePullRequestIsMerged
 {

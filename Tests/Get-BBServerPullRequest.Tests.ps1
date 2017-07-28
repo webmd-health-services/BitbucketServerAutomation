@@ -37,10 +37,10 @@ function GivenARepository
     {
         $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $script:tempRepoRoot -ItemType 'Directory' | Out-Null
+        $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
             
-        Push-Location -Path $script:tempRepoRoot
+        Push-Location -Path $Script:tempRepoRoot
         git clone $repoClonePath $repoName 2>&1
         Set-Location $repoName
         git commit --allow-empty -m 'Initializing repository for `Get-BBServerPullRequest` tests' 2>&1
@@ -63,9 +63,9 @@ function GivenAPullRequest
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $script:start -ErrorAction SilentlyContinue
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $Script:start -ErrorAction SilentlyContinue
 
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
     if($pullRequest) 
@@ -88,9 +88,9 @@ function GivenTwoPullRequests
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $script:start -ErrorAction SilentlyContinue
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $Script:start -ErrorAction SilentlyContinue
 
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To 'master'
@@ -114,33 +114,33 @@ function GivenNoPullRequests
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $script:start -ErrorAction SilentlyContinue
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $Script:start -ErrorAction SilentlyContinue
 }
 
 function WhenGetPullRequestIsCalled {
     $Global:Error.clear()
-    $script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
+    $Script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
 }
 function WhenGetPullRequestIsCalledWithId {
     $Global:Error.clear()
-    $script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:pullRequest.id
+    $Script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:pullRequest.id
 }
 function ThenItShouldReturnAllPullRequests {
     it 'the response should contain multiple pull requests' {
-        $script:receivedPullRequest.size | Should BeGreaterThan 1
+        $Script:receivedPullRequest.size | Should BeGreaterThan 1
     }
 }
 
 function ThenItShouldReturnAPullRequest {
-    it ('the response should contain a pull request with id of {0}' -f $script:pullRequest.id) {
-        $script:receivedPullRequest.id | should -eq $script:pullRequest.id
+    it ('the response should contain a pull request with id of {0}' -f $Script:pullRequest.id) {
+        $Script:receivedPullRequest.id | should -eq $Script:pullRequest.id
     }
 }
 function ThenItShouldReturnZeroPullRequests {
     it 'the response should contain no pull requests' {
-        $script:receivedPullRequest.size | Should Be 0
+        $Script:receivedPullRequest.size | Should Be 0
     }
 }
 

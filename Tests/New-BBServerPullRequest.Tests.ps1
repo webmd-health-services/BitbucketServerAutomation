@@ -37,10 +37,10 @@ function GivenARepository
     {
         $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $script:tempRepoRoot -ItemType 'Directory' | Out-Null
+        $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
             
-        Push-Location -Path $script:tempRepoRoot
+        Push-Location -Path $Script:tempRepoRoot
         git clone $repoClonePath $repoName 2>&1
         Set-Location $repoName
         git commit --allow-empty -m 'Initializing repository for `New-BBServerPullRequest` tests' 2>&1
@@ -51,14 +51,14 @@ function GivenABranchWithCommits
 {
    try
     {
-        git checkout -b $script:fromBranchName
+        git checkout -b $Script:fromBranchName
         git commit --allow-empty -m 'test commit'
         git push -u origin HEAD
     }
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
     New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $start -ErrorAction SilentlyContinue
 }
@@ -67,42 +67,42 @@ function GivenABranchWithNoCommits
 {        
     try
     {
-        git checkout -b $script:fromBranchName
+        git checkout -b $Script:fromBranchName
         git push -u origin HEAD
     }
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $Script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
 }
 
 function GivenNoDestinationBranchExists
 {
     try
     {
-        git checkout -b $script:fromBranchName
+        git checkout -b $Script:fromBranchName
         git push -u origin HEAD
     }
     finally
     {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
 }
 
 function GivenNoFromBranchExists
 {
         Pop-Location
-        Remove-Item -Path $script:tempRepoRoot -Recurse -Force
-        New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
+        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $Script:toBranchName -StartPoint $start -ErrorAction SilentlyContinue
 }
 
 function WhenAPullRequestIsCreated 
 {   
     $Global:Error.clear()
-    $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $script:fromBranchName -To $toBranchName
+    $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $Script:fromBranchName -To $toBranchName
     if($pullRequest) 
     {
         $Script:pullRequest = $pullRequest
@@ -156,12 +156,12 @@ Describe 'New-BBServerPullRequest.when pull request is made with a destination b
     GivenARepository
     GivenNoDestinationBranchExists
     WhenAPullRequestIsCreated 
-    ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $script:toBranchName)
+    ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $Script:toBranchName)
 }
 
 Describe 'New-BBServerPullRequest.when pull request is made with a from bad branch' {
     GivenARepository
     GivenNoFromBranchExists
     WhenAPullRequestIsCreated 
-    ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $script:fromBranchName)
+    ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $Script:fromBranchName)
 }
