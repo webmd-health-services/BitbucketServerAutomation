@@ -18,7 +18,6 @@ $fromBranchName = 'branch-to-merge'
 $toBranchName = 'destination-branch'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Invoke-BBServerPullRequests Tests'
 $toBranch = $null
-$pullRequest = $null
 $tempRepoRoot = $null
 $version = $null
 $id = $null
@@ -67,11 +66,11 @@ function GivenAPullRequest
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
     if($pullRequest)
     {
-        $Script:pullRequest = $pullRequest
         $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
     }
-    else{
+    else
+    {
         $Script:version = -1
         $Script:id = -1
     }
@@ -102,20 +101,22 @@ function GivenAPullRequestWithConflicts
     $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
     if($pullRequest)
     {
-        $Script:pullRequest = $pullRequest
         $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
     }
-    else{
+    else
+    {
         $Script:version = -1
         $Script:id = -1
     }
 }
-function GivenABadVersionNumber{
+function GivenABadVersionNumber
+{
     $Script:version = '-1'
 }
 
-function GivenABadIdNumber {
+function GivenABadIdNumber
+{
     $Script:id = '-1'
 }
 function WhenThePullRequestIsMerged

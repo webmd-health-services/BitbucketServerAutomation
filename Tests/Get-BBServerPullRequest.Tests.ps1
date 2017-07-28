@@ -119,26 +119,31 @@ function GivenNoPullRequests
     New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint $Script:start -ErrorAction SilentlyContinue
 }
 
-function WhenGetPullRequestIsCalled {
+function WhenGetPullRequestIsCalled
+{
     $Global:Error.clear()
     $Script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
 }
-function WhenGetPullRequestIsCalledWithId {
+function WhenGetPullRequestIsCalledWithId
+{
     $Global:Error.clear()
     $Script:receivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:pullRequest.id
 }
-function ThenItShouldReturnAllPullRequests {
+function ThenItShouldReturnAllPullRequests
+{
     it 'the response should contain multiple pull requests' {
         $Script:receivedPullRequest.size | Should BeGreaterThan 1
     }
 }
 
-function ThenItShouldReturnAPullRequest {
+function ThenItShouldReturnAPullRequest
+{
     it ('the response should contain a pull request with id of {0}' -f $Script:pullRequest.id) {
         $Script:receivedPullRequest.id | should -eq $Script:pullRequest.id
     }
 }
-function ThenItShouldReturnZeroPullRequests {
+function ThenItShouldReturnZeroPullRequests
+{
     it 'the response should contain no pull requests' {
         $Script:receivedPullRequest.size | Should Be 0
     }
