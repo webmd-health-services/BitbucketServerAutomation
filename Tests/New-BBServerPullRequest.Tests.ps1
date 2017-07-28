@@ -127,7 +127,7 @@ function WhenAPullRequestIsCreated
         $From
     )
     $Global:Error.clear()
-    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $From -To 'master' -Title $title
+    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $From -To $toBranchName -Title $title
     if($pullRequest) 
     {
         $Script:pullRequest = $pullRequest
@@ -188,7 +188,7 @@ Describe 'New-BBServerPullRequest.when pull request is made with a destination b
 Describe 'New-BBServerPullRequest.when pull request is made with a from bad branch' {
     GivenARepository
     GivenNoFromBranchExists
-    WhenAPullRequestIsCreated -From $Script:BadFromBranchName
+    WhenAPullRequestIsCreated -From $Script:fromBranchName
     ThenItShouldThrowAnError -expectedError ('Repository "{0}" of project with key "{1}" has no branch "{2}"' -f $repoName, $projectKey, $Script:fromBranchName)
 }
 
