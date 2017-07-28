@@ -18,6 +18,7 @@ $fromBranchName = 'branch-to-merge'
 $toBranchName = 'destination-branch'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerBranch Tests'
 $toBranch = $null
+$pullRequest = $null
 $tempRepoRoot = $null
 $version = $null
 $id = $null
