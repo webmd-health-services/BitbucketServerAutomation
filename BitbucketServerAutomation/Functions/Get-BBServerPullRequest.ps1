@@ -21,7 +21,7 @@ function Get-BBServerPullRequest
 
 
     .EXAMPLE
-    Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $id
+    Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $ID
     #>
     [CmdletBinding()]
     param(
@@ -31,21 +31,24 @@ function Get-BBServerPullRequest
         $Connection,
 
         [string]
-        # The id of the pull request to get
-        $id = "",
+        # The id of the pull request to get, if this is not included the default will be to get all current pull requests
+        $ID = "",
 
         [Parameter(Mandatory=$true)]
         [string]
-        $projectKey,
+        # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
+        $ProjectKey,
 
         [Parameter(Mandatory=$true)]
         [string]
+        # The name of a specific repository.
         $RepoName        
     )
     
     Set-StrictMode -Version 'Latest'
-
-    $resourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}' -f $ProjectKey, $RepoName, $id)
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
     
-    return Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $resourcePath 
+    $ResourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}' -f $ProjectKey, $RepoName, $ID)
+    
+    return Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $ResourcePath 
 }

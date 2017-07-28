@@ -16,27 +16,28 @@ $projectKey = 'GBBSBRANCH'
 $repoName = 'repositorywithbranches'
 $fromBranchName = 'branch-to-merge'
 $toBranchName = 'destination-branch'
-$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Invoke-BBServerPullRequests Tests'
+$BBConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Merge-BBServerPullRequests Tests'
 $toBranch = $null
 $tempRepoRoot = $null
 $version = $null
 $id = $null
+$Title = 'Pull Request Title'
 
 function GivenARepository
 {   
     $Script:pullRequest = $null
-    $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
+    $getRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName
 
     if ( $getRepo )
     {
-        Remove-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -Force
+        Remove-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName -Force
     }
-    New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName | Out-Null
+    New-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName | Out-Null
     
-    $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
+    $getBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName
     if( !$getBranches )
     {
-        $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
+        $targetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName
         $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
         $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
         New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
@@ -44,7 +45,7 @@ function GivenARepository
         Push-Location -Path $Script:tempRepoRoot
         git clone $repoClonePath $repoName 2>&1
         Set-location $repoName
-        git commit --allow-empty -m 'Initializing repository for `Invoke-BBServerPullRequests` tests' 2>&1
+        git commit --allow-empty -m 'Initializing repository for `Merge-BBServerPullRequests` tests' 2>&1
         git push -u origin 2>&1
     }
 }
@@ -62,8 +63,8 @@ function GivenAPullRequest
         Pop-Location
         Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    $Script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
-    $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
+    $Script:toBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName -Title $Title
     if($pullRequest)
     {
         $Script:version = $pullRequest.version
@@ -77,7 +78,7 @@ function GivenAPullRequest
 }
 function GivenAPullRequestWithConflicts
 {
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $fromBranchName -StartPoint 'master'
+    New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $fromBranchName -StartPoint 'master'
         
     try
     {
@@ -97,8 +98,8 @@ function GivenAPullRequestWithConflicts
         Pop-Location
         Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
     }
-    $Script:toBranch = New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
-    $pullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName
+    $Script:toBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName -Title $Title
     if($pullRequest)
     {
         $Script:version = $pullRequest.version
@@ -122,13 +123,13 @@ function GivenABadIdNumber
 function WhenThePullRequestIsMerged
 {
     $Global:Error.Clear()
-    Invoke-BBServerPullRequestMerge -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id -version $Script:version
+    Merge-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id -version $Script:version
 }
 
 function  ThenItShouldBeMerged
 {
     it ('should be merged into {0}' -f $toBranchName){
-        $pullRequestStatus = Get-BBServerPullRequest -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id
+        $pullRequestStatus = Get-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id
         $pullRequestStatus.state | should -match 'merged'
     }
 }
@@ -144,7 +145,7 @@ function ThenItShouldThrowAnError
     }
 }
 
-Describe 'Invoke-BBServerPullRequestMerge.when merged with bad version number' {
+Describe 'Merge-BBServerPullRequestMerge.when merged with bad version number' {
     GivenARepository
     GivenAPullRequest
     GivenABadVersionNumber
@@ -152,7 +153,7 @@ Describe 'Invoke-BBServerPullRequestMerge.when merged with bad version number' {
     ThenItShouldThrowAnError -expectedError 'you are attempting to modify a pull request based on out-of-date information' 
 }
 
-Describe 'Invoke-BBServerPullRequestMerge.whentrying to merge an invalid pull request' {
+Describe 'Merge-BBServerPullRequestMerge.whentrying to merge an invalid pull request' {
     GivenARepository
     GivenAPullRequest
     GivenABadIdNumber
@@ -160,14 +161,14 @@ Describe 'Invoke-BBServerPullRequestMerge.whentrying to merge an invalid pull re
     ThenItShouldThrowAnError -expectedError ('com.atlassian.bitbucket.pull.NoSuchPullRequestException: No pull request exists with ID {0} for this repository ' -f $Script:id )
 }
 
-Describe 'Invoke-BBServerPullRequestMerge.when a pull request has a conflict' {
+Describe 'Merge-BBServerPullRequestMerge.when a pull request has a conflict' {
     GivenARepository
     GivenAPullRequestWithConflicts
     WhenThePullRequestIsMerged
     ThenItShouldThrowAnError -expectedError 'The pull request has conflicts and cannot be merged'
 }
 
-Describe 'Invoke-BBServerPullRequestMerge.when a pull request is able to merge' {
+Describe 'Merge-BBServerPullRequestMerge.when a pull request is able to merge' {
     GivenARepository
     GivenAPullRequest
     WhenThePullRequestIsMerged

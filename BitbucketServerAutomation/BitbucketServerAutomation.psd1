@@ -83,7 +83,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
                             'Get-BBServerPullRequestSetting',
                             'Get-BBServerRepository', 
                             'Get-BBServerTag',
-                            'Invoke-BBServerPullRequestMerge',
+                            'Merge-BBServerPullRequest',
                             'Invoke-BBServerRestMethod',
                             'Move-BBServerRepository',
                             'New-BBServerBranch',

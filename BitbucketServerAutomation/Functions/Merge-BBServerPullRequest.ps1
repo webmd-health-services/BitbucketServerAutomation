@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function Invoke-BBServerPullRequestMerge
+function Merge-BBServerPullRequest
 {
     param(        
         [Parameter(Mandatory=$true)]
@@ -19,21 +19,28 @@ function Invoke-BBServerPullRequestMerge
         $Connection,
         [Parameter(Mandatory=$true)]
         [string]
+        # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
         $ProjectKey,
         [Parameter(Mandatory=$true)]
         [string]
+        # The name of a specific repository.
         $RepoName,
         [Parameter(Mandatory=$true)]
         [string]
-        $id,
+        # this is the ID of the pull request you wish to merge, use the Get-BBServerPullRequest to find the ID
+        $ID,
         [Parameter(Mandatory=$true)]
         [string]
-        $version
+        # this is to specify the current version of the pull request you wish to merge. you can get the version of the pull request from Get-BBServerPullRequest
+        $Version
     )
-        $body = @{
-            version = $version;
-        }
-        $resourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}/merge' -f $ProjectKey, $RepoName, $id )
+    Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
+    
+    $Body = @{
+        version = $Version;
+    }
+    $ResourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}/merge' -f $ProjectKey, $RepoName, $ID )
 
-        return $body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath
+    return $Body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $ResourcePath
 }
