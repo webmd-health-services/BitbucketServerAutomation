@@ -71,6 +71,10 @@ function GivenAPullRequest
         $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
     }
+    else{
+        $Script:version = -1
+        $Script:id = -1
+    }
 }
 function GivenAPullRequestWithConflicts
 {
@@ -101,6 +105,10 @@ function GivenAPullRequestWithConflicts
         $Script:pullRequest = $pullRequest
         $Script:version = $pullRequest.version
         $Script:id = $pullRequest.id
+    }
+    else{
+        $Script:version = -1
+        $Script:id = -1
     }
 }
 function GivenABadVersionNumber{
