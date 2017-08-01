@@ -12,76 +12,66 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 Set-StrictMode -Version 'Latest'
 
-$projectKey = 'GBBSBRANCH'
-$repoName = 'repositorywithbranches'
-$fromBranchName = 'branch-to-merge'
-$toBranchName = 'destination-branch'
-$BBConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Merge-BBServerPullRequests Tests'
-$toBranch = $null
-$tempRepoRoot = $null
-$version = $null
-$id = $null
+$ProjectKey = 'GBBSBRANCH'
+$RepoName = 'repositorywithbranches'
+$FromBranchName = 'branch-to-merge'
+$ToBranchName = 'destination-branch'
+$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'Merge-BBServerPullRequests Tests'
+$ToBranch = $null
+$TempRepoRoot = $null
+$Version = $null
+$ID = $null
 $Title = 'Pull Request Title'
 
-function GivenARepository
-{   
+function GivenARepository {   
     $Script:pullRequest = $null
-    $getRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName
+    $GetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
 
-    if ( $getRepo )
-    {
-        Remove-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName -Force
+    if ( $GetRepo ) {
+        Remove-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName -Force
     }
-    New-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName | Out-Null
+    New-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName | Out-Null
     
-    $getBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName
-    if( !$getBranches )
-    {
-        $targetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $projectKey -Name $repoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
+    $GetBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName
+    if ( !$GetBranches ) {
+        $TargetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
+        $RepoClonePath = $TargetRepo.links.clone.href | Where-Object { $_ -match 'http' }
+        $Script:TempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        New-Item -Path $Script:TempRepoRoot -ItemType 'Directory' | Out-Null
             
-        Push-Location -Path $Script:tempRepoRoot
-        git clone $repoClonePath $repoName 2>&1
-        Set-location $repoName
+        Push-Location -Path $Script:TempRepoRoot
+        git clone $RepoClonePath $RepoName 2>&1
+        Set-location $RepoName
         git commit --allow-empty -m 'Initializing repository for `Merge-BBServerPullRequests` tests' 2>&1
         git push -u origin 2>&1
     }
 }
 
-function GivenAPullRequest
-{      
-    try
-    {   
+function GivenAPullRequest {      
+    try {   
         git checkout -b 'branch-to-merge'
         git commit --allow-empty -m 'test commit'
         git push -u origin HEAD
     }
-    finally
-    {
+    finally {
         Pop-Location
-        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
     }
-    $Script:toBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
-    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName -Title $Title
-    if($pullRequest)
-    {
-        $Script:version = $pullRequest.version
-        $Script:id = $pullRequest.id
+    $Script:ToBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To $ToBranchName -Title $Title
+    if ($pullRequest) {
+        $Script:Version = $pullRequest.version
+        $Script:ID = $pullRequest.id
     }
-    else
-    {
-        $Script:version = -1
-        $Script:id = -1
+    else {
+        $Script:Version = -1
+        $Script:ID = -1
     }
 }
-function GivenAPullRequestWithConflicts
-{
-    New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $fromBranchName -StartPoint 'master'
+function GivenAPullRequestWithConflicts {
+    New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $FromBranchName -StartPoint 'master'
         
-    try
-    {
+    try {
         git checkout -b 'branch-to-merge'
         new-item .\testfile.txt -type file -value "we want a merge conflixt"
         git add .\testfile.txt
@@ -93,64 +83,56 @@ function GivenAPullRequestWithConflicts
         git commit -m 'breaking commit'
         git push -u origin HEAD
     }
-    finally
-    {
+    finally {
         Pop-Location
-        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
     }
-    $Script:toBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $toBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
-    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -From $fromBranchName -To $toBranchName -Title $Title
-    if($pullRequest)
-    {
-        $Script:version = $pullRequest.version
-        $Script:id = $pullRequest.id
+    $Script:ToBranch = New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint 'master' -ErrorAction SilentlyContinue
+    $pullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To $ToBranchName -Title $Title
+    if ($pullRequest) {
+        $Script:Version = $pullRequest.version
+        $Script:ID = $pullRequest.id
     }
-    else
-    {
-        $Script:version = -1
-        $Script:id = -1
+    else {
+        $Script:Version = -1
+        $Script:ID = -1
     }
 }
-function GivenABadVersionNumber
-{
-    $Script:version = '-1'
+function GivenABadVersionNumber {
+    $Script:Version = '-1'
 }
 
-function GivenABadIdNumber
-{
-    $Script:id = '-1'
+function GivenABadIdNumber {
+    $Script:ID = '-1'
 }
-function WhenThePullRequestIsMerged
-{
+function WhenThePullRequestIsMerged {
     $Global:Error.Clear()
-    Merge-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id -version $Script:version
+    Merge-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:ID -Version $Script:Version
 }
 
-function  ThenItShouldBeMerged
-{
-    it ('should be merged into {0}' -f $toBranchName){
-        $pullRequestStatus = Get-BBServerPullRequest -Connection $BBConnection -ProjectKey $projectKey -RepoName $repoName -id $Script:id
+function  ThenItShouldBeMerged {
+    it ('should be merged into {0}' -f $ToBranchName) {
+        $pullRequestStatus = Get-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:ID
         $pullRequestStatus.state | should -match 'merged'
     }
 }
 
-function ThenItShouldThrowAnError 
-{
+function ThenItShouldThrowAnError {
     param(
         [string]
-        $expectedError
+        $ExpectedError
     )
     it 'should throw an error' {
-        $Global:Error | Where-Object { $_ -match $expectedError } | Should -not -BeNullOrEmpty
+        $Global:Error | Where-Object { $_ -match $ExpectedError } | Should -not -BeNullOrEmpty
     }
 }
 
-Describe 'Merge-BBServerPullRequestMerge.when merged with bad version number' {
+Describe 'Merge-BBServerPullRequestMerge.when merged with bad Version number' {
     GivenARepository
     GivenAPullRequest
     GivenABadVersionNumber
     WhenThePullRequestIsMerged
-    ThenItShouldThrowAnError -expectedError 'you are attempting to modify a pull request based on out-of-date information' 
+    ThenItShouldThrowAnError -ExpectedError 'you are attempting to modify a pull request based on out-of-date information' 
 }
 
 Describe 'Merge-BBServerPullRequestMerge.whentrying to merge an invalid pull request' {
@@ -158,14 +140,14 @@ Describe 'Merge-BBServerPullRequestMerge.whentrying to merge an invalid pull req
     GivenAPullRequest
     GivenABadIdNumber
     WhenThePullRequestIsMerged
-    ThenItShouldThrowAnError -expectedError ('com.atlassian.bitbucket.pull.NoSuchPullRequestException: No pull request exists with ID {0} for this repository ' -f $Script:id )
+    ThenItShouldThrowAnError -ExpectedError ('com.atlassian.bitbucket.pull.NoSuchPullRequestException: No pull request exists with ID {0} for this repository ' -f $Script:ID )
 }
 
 Describe 'Merge-BBServerPullRequestMerge.when a pull request has a conflict' {
     GivenARepository
     GivenAPullRequestWithConflicts
     WhenThePullRequestIsMerged
-    ThenItShouldThrowAnError -expectedError 'The pull request has conflicts and cannot be merged'
+    ThenItShouldThrowAnError -ExpectedError 'The pull request has conflicts and cannot be merged'
 }
 
 Describe 'Merge-BBServerPullRequestMerge.when a pull request is able to merge' {

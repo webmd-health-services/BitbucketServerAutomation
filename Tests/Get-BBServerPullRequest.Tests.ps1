@@ -24,24 +24,24 @@ $ReceivedPullRequest = $null
 
 function GivenARepository
 {   
-    $Script:pullRequest = $null
-    $getRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
+    $Script:PullRequest = $null
+    $GetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
 
-    if ( $getRepo )
+    if ( $GetRepo )
     {
         Remove-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName -Force
     }
     New-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName | Out-Null
     
-    $getBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName
-    if( !$getBranches )
+    $GetBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName
+    if( !$GetBranches )
     {
-        $targetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $Script:tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $Script:tempRepoRoot -ItemType 'Directory' | Out-Null
+        $TargetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
+        $repoClonePath = $TargetRepo.links.clone.href | Where-Object { $_ -match 'http' }
+        $Script:TempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
+        New-Item -Path $Script:TempRepoRoot -ItemType 'Directory' | Out-Null
             
-        Push-Location -Path $Script:tempRepoRoot
+        Push-Location -Path $Script:TempRepoRoot
         git clone $repoClonePath $RepoName 2>&1
         Set-Location $RepoName
         git commit --allow-empty -m 'Initializing repository for `Get-BBServerPullRequest` tests' 2>&1
@@ -64,14 +64,14 @@ function GivenAPullRequest
     finally
     {
         Pop-Location
-        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
     }
     New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 
     $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To $ToBranchName -Title $Title
     if($PullRequest) 
     {
-        $Script:pullRequest = $PullRequest
+        $Script:PullRequest = $PullRequest
     }
 }
 function GivenTwoPullRequests
@@ -89,7 +89,7 @@ function GivenTwoPullRequests
     finally
     {
         Pop-Location
-        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
     }
     New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 
@@ -97,7 +97,7 @@ function GivenTwoPullRequests
     $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To 'master' -Title $Title
     if($PullRequest) 
     {
-        $Script:pullRequest = $PullRequest
+        $Script:PullRequest = $PullRequest
     }
 }
 function GivenNoPullRequests
@@ -115,7 +115,7 @@ function GivenNoPullRequests
     finally
     {
         Pop-Location
-        Remove-Item -Path $Script:tempRepoRoot -Recurse -Force
+        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
     }
     New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 }
@@ -128,7 +128,7 @@ function WhenGetPullRequestIsCalled
 function WhenGetPullRequestIsCalledWithId
 {
     $Global:Error.clear()
-    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:pullRequest.id
+    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:PullRequest.id
 }
 function ThenItShouldReturnAllPullRequests
 {
@@ -139,8 +139,8 @@ function ThenItShouldReturnAllPullRequests
 
 function ThenItShouldReturnAPullRequest
 {
-    it ('the response should contain a pull request with id of {0}' -f $Script:pullRequest.id) {
-        $Script:ReceivedPullRequest.id | Should -eq $Script:pullRequest.id
+    it ('the response should contain a pull request with id of {0}' -f $Script:PullRequest.id) {
+        $Script:ReceivedPullRequest.id | Should -eq $Script:PullRequest.id
     }
 }
 function ThenItShouldReturnZeroPullRequests
