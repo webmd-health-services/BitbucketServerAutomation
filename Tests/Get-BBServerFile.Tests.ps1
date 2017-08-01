@@ -10,13 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 4
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $projectKey = 'GBBSFILE'
-$repoName = 'RepositoryWithFiles'
+$repo = $null
+$repoName = $null 
+[string[]]$getFiles = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerFile Tests'
 
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
 $initialFileList = (
                     'TestFileA.txt',
                     'TestFileB.txt',
@@ -32,33 +36,32 @@ function GivenARepositoryWithFiles
 {
     [CmdletBinding()]
     param(
+        [string[]]
+        $Path
     )
 
-    $getFiles = Get-BBServerFile -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -ErrorAction Ignore
-    if( !$getFiles )
-    {
-        $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
+    $script:repoName = '{0}{1}' -f ($PSCommandPath | Split-Path -Leaf),[IO.Path]::GetRandomFileName()
+    New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
+    $script:repo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
+
+    $repoClonePath = $repo.links.clone.href | Where-Object { $_ -match 'http' }
+    $tempRepoRoot = $TestDrive.FullName
             
-        Push-Location -Path $tempRepoRoot
-        try
-        {
-            git clone $repoClonePath $repoName 2>&1
-            cd $repoName
-            $initialFileList | ForEach-Object {
-                New-Item -Path $_ -ItemType 'File' -Force
-            }
-            git add . 2>&1
-            git commit -m 'Staging test files for `Get-BBServerFile` tests' 2>&1
-            git push -u origin 2>&1
+    git clone $repoClonePath $tempRepoRoot 2>&1
+
+    Push-Location -Path $tempRepoRoot
+    try
+    {
+        $initialFileList | ForEach-Object {
+            New-Item -Path $_ -ItemType 'File' -Force
         }
-        finally
-        {
-            Pop-Location
-            Remove-Item -Path $tempRepoRoot -Recurse -Force
-        }
+        git add . 2>&1
+        git commit -m 'Staging test files for `Get-BBServerFile` tests' 2>&1
+        git push -u origin 2>&1
+    }
+    finally
+    {
+        Pop-Location
     }
 }
 
@@ -66,17 +69,11 @@ function WhenGettingFiles
 {
     [CmdletBinding()]
     param(
-        [switch]
-        $FromTheRoot,
-
-        [switch]
-        $WithNoSearchFilter,
-
         [string]
         $WithSearchFilter,
 
         [string]
-        $WithFilePath
+        $WithPath
     )
 
     $Global:Error.Clear()
@@ -84,179 +81,116 @@ function WhenGettingFiles
     $bbServerFileParams = @{}
     if( $WithSearchFilter )
     {
-        $bbServerFileParams['FileName'] = $WithSearchFilter
+        $bbServerFileParams['Filter'] = $WithSearchFilter
     }
     
-    if( $WithFilePath )
+    if( $WithPath )
     {
-        $bbServerFileParams['FilePath'] = $WithFilePath
+        $bbServerFileParams['Path'] = $WithPath
     }
     
-    $getFiles = Get-BBServerFile -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName @bbServerFileParams -ErrorAction SilentlyContinue
-    
-    if( $FromTheRoot -and $WithNoSearchFilter )
+    $result = Get-BBServerFile -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName @bbServerFileParams -ErrorAction SilentlyContinue
+    if( -not $result )
     {
-        It 'should retrieve exactly 8 files' {
-            $getFiles.Count | Should Be 8
-        }
+        $result = @()
+    }
+    $script:getFiles = $result
+}
 
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $initialFileList -contains $_ | Should Be True
-            }
-        }
+function ThenItShouldReturn
+{
+    param(
+        [string[]]
+        $ExpectedPath
+    )
+
+    It ('should retrieve exactly {0} file(s)' -f $ExpectedPath.Count) {
+        $getFiles.Count | Should Be $ExpectedPath.Count
     }
 
-    if( $FromTheRoot -and $WithSearchFilter -eq 'FileTest1.doc' )
-    {
-        $searchResultsList = ('FileTest1.doc', 'TestFolderA/FileTest1.doc')
-
-        It 'should retrieve exactly 2 files' {
-            $getFiles.Count | Should Be 2
-        }
-
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $FromTheRoot -and $WithSearchFilter -eq '*.txt' )
-    {
-        $searchResultsList = ('TestFileA.txt', 'TestFileB.txt', 'TestFolderA/TestFileA.txt', 'TestFolderA/TestFolderB/TestFileB.txt')
-
-        It 'should retrieve exactly 4 files' {
-            $getFiles.Count | Should Be 4
-        }
-
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $FromTheRoot -and $WithSearchFilter -eq 'File*' )
-    {
-        $searchResultsList = ('FileTest1.doc', 'FileTest2.doc', 'TestFolderA/FileTest1.doc', 'TestFolderA/TestFolderB/FileTest2.doc')
-
-        It 'should retrieve exactly 4 files' {
-            $getFiles.Count | Should Be 4
-        }
-
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $FromTheRoot -and $WithSearchFilter -eq '*1*' )
-    {
-        $searchResultsList = ('FileTest1.doc', 'TestFolderA/FileTest1.doc')
-
-        It 'should retrieve exactly 2 files' {
-            $getFiles.Count | Should Be 2
-        }
-
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $WithFilePath -eq 'TestFolderA' -and $WithNoSearchFilter )
-    {
-        $searchResultsList = ('TestFileA.txt', 'FileTest1.doc', 'TestFolderB/TestFileB.txt', 'TestFolderB/FileTest2.doc')
-
-        It 'should retrieve exactly 4 files' {
-            $getFiles.Count | Should Be 4
-        }
-        
-        $getFiles | ForEach-Object {
-            It ('result set should include {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $WithFilePath -eq 'TestFolderA/TestFolderB' -and $WithSearchFilter -eq '*.doc' )
-    {
-        $searchResultsList = ('FileTest2.doc')
-        
-        $getFiles | ForEach-Object {
-            It ('result set should include only {0}' -f $_) {
-                $searchResultsList -contains $_ | Should Be True
-            }
-        }
-    }
-
-    if( $FromTheRoot -and $WithSearchFilter -eq 'NonExistentFile.txt' )
-    {
-        $searchResultsList = ('FileTest1.doc', 'FileTest2.doc', 'TestFolderA/FileTest1.doc', 'TestFolderA/TestFolderB/FileTest2.doc')
-
-        It 'should not retrieve any files' {
-            $getFiles | Should BeNullOrEmpty
-        }
-    }
-
-    if( $WithFilePath -eq 'NonExistentFolder' )
-    {
-        It 'should throw an error that the file path does not exist' {
-            $Global:Error | Should Match ('The path "{0}" does not exist' -f $WithFilePath)
-        }
-    }
-    else
-    {
-        It 'should not throw any errors' {
-            $Global:Error | Should BeNullOrEmpty
+    $ExpectedPath | ForEach-Object {
+        It ('should return {0}' -f $_) {
+            $getFiles -contains $_ | Should Be True
         }
     }
 }
 
-Describe 'Get-BBServerFile.when returning all files from the root of the repository' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithNoSearchFilter
+Describe 'Get-BBServerFile.when returning all files' {
+    GivenARepositoryWithFiles @(
+                                'TestFileA.txt',
+                                'TestFileB.txt',
+                                'FileTest1.doc',
+                                'FileTest2.doc',
+                                'TestFolderA/TestFileA.txt',
+                                'TestFolderA/FileTest1.doc',
+                                'TestFolderA/TestFolderB/TestFileB.txt',
+                                'TestFolderA/TestFolderB/FileTest2.doc'
+                               )
+    WhenGettingFiles
+    ThenItShouldReturn @(
+                            'TestFileA.txt',
+                            'TestFileB.txt',
+                            'FileTest1.doc',
+                            'FileTest2.doc',
+                            'TestFolderA/TestFileA.txt',
+                            'TestFolderA/FileTest1.doc',
+                            'TestFolderA/TestFolderB/TestFileB.txt',
+                            'TestFolderA/TestFolderB/FileTest2.doc'
+                        )
 }
 
 Describe 'Get-BBServerFile.when returning files from the root named ''FileTest1.doc''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithSearchFilter 'FileTest1.doc'
+    GivenARepositoryWithFiles @(
+                                'FileTest1.doc',
+                                'TestFolderA/FileTest1.doc'
+                               )
+    WhenGettingFiles -WithSearchFilter 'FileTest1.doc'
+    ThenItShouldReturn 'FileTest1.doc'
 }
 
-Describe 'Get-BBServerFile.when returning files from the root that match wildcard search ''*.txt''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithSearchFilter '*.txt'
+Describe 'Get-BBServerFile.when using a search filter' {
+    GivenARepositoryWithFiles @(
+                                    'TestFileA.txt',
+                                    'TestFileB.txt',
+                                    'FileTest1.doc',
+                                    'FileTest2.doc',
+                                    'TestFolderA/TestFileA.txt',
+                                    'TestFolderA/FileTest1.doc',
+                                    'TestFolderA/TestFolderB/TestFileB.txt',
+                                    'TestFolderA/TestFolderB/FileTest2.doc'
+                               )
+    WhenGettingFiles -WithSearchFilter '*.txt'
+    ThenItShouldReturn 'TestFileA.txt','TestFileB.txt','TestFolderA/TestFileA.txt','TestFolderA/TestFolderB/TestFileB.txt'
 }
 
-Describe 'Get-BBServerFile.when returning files from the root that begin with ''File''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithSearchFilter 'File*'
-}
-
-Describe 'Get-BBServerFile.when returning files from the root that contain the number ''1''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithSearchFilter '*1*'
-}
-
-Describe 'Get-BBServerFile.when returning files from a sub-directory named ''TestFolderA''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -WithFilePath 'TestFolderA' -WithNoSearchFilter
-}
-
-Describe 'Get-BBServerFile.when returning files from a sub-directory named ''TestFolderA/TestFolderB''' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -WithFilePath 'TestFolderA/TestFolderB' -WithSearchFilter '*.doc'
+Describe 'Get-BBServerFile.when searching a sub-directory' {
+    GivenARepositoryWithFiles @(
+                                    'TestFileA.txt',
+                                    'TestFileB.txt',
+                                    'FileTest1.doc',
+                                    'FileTest2.doc',
+                                    'TestFolderA/TestFileA.txt',
+                                    'TestFolderA/FileTest1.doc',
+                                    'TestFolderA/TestFolderB/TestFileB.txt',
+                                    'TestFolderA/TestFolderB/FileTest2.doc'
+                               )
+    WhenGettingFiles -WithPath 'TestFolderA'
+    ThenItShouldReturn @(
+                            'TestFileA.txt',
+                            'FileTest1.doc',
+                            'TestFolderB/TestFileB.txt',
+                            'TestFolderB/FileTest2.doc'
+                        )
 }
 
 Describe 'Get-BBServerFile.when searching for a file name that does not exist' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -FromTheRoot -WithSearchFilter 'NonExistentFile.txt'
+    GivenARepositoryWithFiles @( 'File1.txt' )
+    WhenGettingFiles -WithSearchFilter 'NonExistentFile.txt'
+    ThenItShouldReturn @( )
 }
 
 Describe 'Get-BBServerFile.when passed a file path that does not exist' {
-    GivenARepositoryWithFiles
-    WhenGettingFiles -WithFilePath 'NonExistentFolder' -WithNoSearchFilter
+    GivenARepositoryWithFiles @( 'Fil1.txt' )
+    WhenGettingFiles -WithPath 'NonExistentFolder'
+    ThenItShouldReturn @( )
 }

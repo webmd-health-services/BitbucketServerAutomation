@@ -138,6 +138,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 * Created `Get-BBServerPullRequest` function for getting pull requests.
 * Created `Merge-BBServerPullRequest` function for merging a pull request.
 * Created `New-BBServerPullRequest` function for creating a pull request.
+* Renamed `Get-BBServerFile` function's `FilePath` and `FileName` parameters to `Path` and `Filter`, respectively, to make it clearer what each parameter does.
+* `Get-BBServerFile` now filters on the whole path, not just the file name. 
 '@
 
         } # End of PSData hashtable

@@ -18,15 +18,32 @@ function Get-BBServerFile
 
     .DESCRIPTION
     The `Get-BBServerFile` function returns a list of all files in a Bitbucket Server repository.
-    
-    If you pass a path, the file search will begin at the specified directory relative to the root of the repository. By default, the file search will begin at the root. All file searches are performed recursively and all matching files from all sub-directories will be returned.  
 
-    If you pass a name, the search will only return that match the criteria. Wildcards are allowed to search for files. Wildcard matching is *not* supported by the Bitbucket Server API, so all files must be retrieved and searched.
+    To get only files under part of a repository, pass its path to the `Path` parameter. The path should be relative to the root of the repository.
+    
+    To search for files, use the `Filter` parameter. Pass it the path to a specific file, or a wildcard pattern that matches multiple files. `Get-BBServerFile` uses PowerShell's `-like` operator to do the comparison.
+
+    Note that when using the `Path` parameter, the Bitbucket Server API treats that path as if it were the root of the repository. Paths returns will not have `Path` at the beginning of the path. Filters that include `Path` will not match anything.
 
     .EXAMPLE
     Get-BBServerFile -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo'
 
     Demonstrates how to get a list of all the files `TestRepo` repository.
+
+    .EXAMPLE
+    Get-BBServerFile -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -Filter 'publish.ps1'
+
+    Demonstrates how to get a specific file. In this case, only a file named `publish.ps1` in the root of the repository, is returned.
+
+    .EXAMPLE
+    Get-BBServerFile -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -Filter 'BitbucketServerAutomation/BitbucketServerAutomation.psd1'
+
+    Demonstrates how to get a specific file. In this case, only a file `BitbucketServerAutomation/BitbucketServerAutomation.psd1` will be returned, if it exists.
+
+    .EXAMPLE
+    Get-BBServerFile -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -Filter '*.txt'
+
+    Demonstrates how to get all files that match a wildcard. In this case, all files whose paths end in `.txt` will be returned. Uses PowerShell's `-like` operator.
     #>
     [CmdletBinding()]
     param(
@@ -46,41 +63,25 @@ function Get-BBServerFile
         $RepoName,
 
         [string]
-        # The name of the file to search for.
-        $FileName,
+        # The path where the search should start. By default the root of the repository is used so the whole repository is searched. Use this parameter to only search part of the repository.
+        $Path,
 
         [string]
-        # The file path to begin searching for files, relative to the repository's root. All sub-directories will be searched recursively.
-        $FilePath
-
+        # Only returns files whose paths match this filter. Wildcards are supported.
+        $Filter
     )
     
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
     
-    $resourcePath = ('projects/{0}/repos/{1}/files/{2}' -f $ProjectKey, $RepoName, $FilePath)
-    $nextPageStart = 0
-    $isLastPage = $false
-    $fileList = $null
-    
-    while( $isLastPage -eq $false )
-    {
-        $getFiles = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
-        if( $getFiles )
-        {
-            $nextPageStart = $getFiles.nextPageStart
-            $isLastPage = $getFiles.isLastPage
-            $fileList += $getFiles.values
+    $resourcePath = ('projects/{0}/repos/{1}/files/{2}' -f $ProjectKey, $RepoName, $Path)
+    Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath, [int16]::MaxValue) | 
+        Select-Object -ExpandProperty 'values' |
+        Where-Object {
+            if( $Filter )
+            {
+                return $_ -like $Filter
+            }
+            return $true
         }
-        else
-        {
-            $isLastPage = $true
-        }
-    }
-    
-    if( $FileName )
-    {
-        $fileList = $fileList | Where-Object { $_.Substring($_.LastIndexOf('/') + 1) -like $FileName }
-    }
-    
-    return $fileList
 }
