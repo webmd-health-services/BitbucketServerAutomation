@@ -58,12 +58,28 @@ function Get-BBServerFile
     Set-StrictMode -Version 'Latest'
     
     $resourcePath = ('projects/{0}/repos/{1}/files/{2}' -f $ProjectKey, $RepoName, $FilePath)
-    $fileList = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath, [int16]::MaxValue) | 
-        Select-Object -ExpandProperty 'values'
+    $nextPageStart = 0
+    $isLastPage = $false
+    $fileList = $null
+    
+    while( $isLastPage -eq $false )
+    {
+        $getFiles = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
+        if( $getFiles )
+        {
+            $nextPageStart = $getFiles.nextPageStart
+            $isLastPage = $getFiles.isLastPage
+            $fileList += $getFiles.values
+        }
+        else
+        {
+            $isLastPage = $true
+        }
+    }
     
     if( $FileName )
     {
-        $fileList = $fileList | Where-Object { $_ -like $FileName }
+        $fileList = $fileList | Where-Object { $_.Substring($_.LastIndexOf('/') + 1) -like $FileName }
     }
     
     return $fileList
