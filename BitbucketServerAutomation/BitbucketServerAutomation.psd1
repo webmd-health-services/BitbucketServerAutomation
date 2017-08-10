@@ -12,25 +12,25 @@
 
 @{
     # Script module or binary module file associated with this manifest.
-    RootModule = 'BitbucketServerAutomation.psm1'
+    RootModule        = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.4.0'
+    ModuleVersion     = '0.4.0'
 
     # ID used to uniquely identify this module
-    GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
+    GUID              = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
 
     # Author of this module
-    Author = 'WebMD Health Services'
+    Author            = 'WebMD Health Services'
 
     # Company or vendor of this module
-    CompanyName = 'WebMD Health Services'
+    CompanyName       = 'WebMD Health Services'
 
     # Copyright statement for this module
-    Copyright = '(c) 2016 WebMD Health Services. All rights reserved.'
+    Copyright         = '(c) 2016 WebMD Health Services. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description = @'
+    Description       = @'
 The Bitbucket Server Automation module is used to interact with Bitbucket Server.
 '@
 
@@ -65,47 +65,49 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # TypesToProcess = @()
 
     # Format files (.ps1xml) to be loaded when importing this module
-    FormatsToProcess = @( 
-                            'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
-                            'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
-                        )
+    FormatsToProcess  = @( 
+        'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
+        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
+    )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @( 
-                            'Get-BBServerBranch',
-                            'Get-BBServerCommitBuildStatus',
-                            'Get-BBServerFile',
-                            'Get-BBServerProject',
-                            'Get-BBServerPullRequest',
-                            'Get-BBServerPullRequestSetting',
-                            'Get-BBServerRepository', 
-                            'Get-BBServerTag',
-                            'Merge-BBServerPullRequest',
-                            'Invoke-BBServerRestMethod',
-                            'Move-BBServerRepository',
-                            'New-BBServerBranch',
-                            'New-BBServerConnection', 
-                            'New-BBServerProject',
-                            'New-BBServerPullRequest',
-                            'New-BBServerRepository', 
-                            'New-BBServerTag',
-                            'Remove-BBServerRepository',
-                            'Rename-BBServerRepository',
-                            'Set-BBServerCommitBuildStatus',
-                            'Set-BBServerDefaultBranch',
-                            'Set-BBServerPullRequestSetting' )
+    FunctionsToExport = @(  
+        'Find-BBServerRepository',
+        'Get-BBServerBranch',
+        'Get-BBServerCommitBuildStatus',
+        'Get-BBServerFile',
+        'Get-BBServerProject',
+        'Get-BBServerPullRequest',
+        'Get-BBServerPullRequestSetting',
+        'Get-BBServerRepository', 
+        'Get-BBServerTag',
+        'Invoke-BBServerRestMethod',
+        'Merge-BBServerPullRequest',
+        'Move-BBServerRepository',
+        'New-BBServerBranch',
+        'New-BBServerConnection', 
+        'New-BBServerProject',
+        'New-BBServerPullRequest',
+        'New-BBServerRepository', 
+        'New-BBServerTag',
+        'Remove-BBServerRepository',
+        'Rename-BBServerRepository',
+        'Set-BBServerCommitBuildStatus',
+        'Set-BBServerDefaultBranch',
+        'Set-BBServerPullRequestSetting' 
+    )
 
     # Cmdlets to export from this module
-    CmdletsToExport = '*'
+    CmdletsToExport   = '*'
 
     # Variables to export from this module
     #VariablesToExport = '*'
 
     # Aliases to export from this module
-    AliasesToExport = '*'
+    AliasesToExport   = '*'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -117,18 +119,18 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # FileList = @()
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData = @{
+    PrivateData       = @{
 
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @( 'git', 'bitbucket', 'bitbucket-server', 'scm', 'devops', 'pipeline', 'atlassian' )
+            Tags         = @( 'git', 'bitbucket', 'bitbucket-server', 'scm', 'devops', 'pipeline', 'atlassian' )
 
             # A URL to the license for this module.
-            LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
+            LicenseUri   = 'http://www.apache.org/licenses/LICENSE-2.0'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/webmd-health-services/BitbucketServerAutomation'
+            ProjectUri   = 'https://github.com/webmd-health-services/BitbucketServerAutomation'
 
             # A URL to an icon representing this module.
             # IconUri = ''
