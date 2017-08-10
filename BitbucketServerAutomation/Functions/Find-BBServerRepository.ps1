@@ -4,7 +4,7 @@ function Find-BBServerRepository
         [parameter(Mandatory=$true)]
         [Object]
         $Connection,
-        # Wildcards supported.
+        # Name of a Repository you wish to find. supports Wildcards. 
         [String]
         $Name
     )
