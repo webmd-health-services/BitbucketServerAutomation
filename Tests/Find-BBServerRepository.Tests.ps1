@@ -1,3 +1,15 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $reposFound = $null
@@ -33,32 +45,20 @@ function ThenNoRepositoryShouldBeReturned
     }
 }
 
-function ThenTheRepositoryShouldBeLike 
+function ThenRepositoryReturned 
 {
     param(
-        [string]
-        $Name
+        [string[]]
+        $Names
     )
-    write-host $script:reposFound
-    it ('should return a repo with name like ''{0}''' -f $Name) {
-        $script:reposFound.name | Where-Object { $_ -match $Name } | Should -not -BeNullOrEmpty
+    $Names | ForEach-Object {
+        it ('should return a repo with names ''{0}''' -f $_) {
+            $currName = $_
+            $script:reposFound.name | Where-Object { $_ -match $currName} | Should -not -BeNullOrEmpty
+        }
     }
-}
-function ThenItShouldReturnMultipleRepositories
-{
-    it 'should return multiple repos' {
-        ($script:reposFound | Measure-Object).Count | Should BeGreaterThan 1
-    }
-}
-
-function ThenItShouldThrowAnError
-{
-    param(
-        [string]
-        $ExpectedError
-    )
-    it 'should throw an error' {
-        $Global:Error | Where-Object { $_ -match $ExpectedError } | Should -not -BeNullOrEmpty
+    it 'should return the same number of repositories' {
+        ($script:reposFound | Measure-Object).Count | Should -match ($Names | Measure-Object).count
     }
 }
 
@@ -72,13 +72,13 @@ Describe 'Find-BBServerRepository.When searching for a repository that matches a
     GivenARepository -Name 'first'
     GivenARepository -Name 'second'
     WhenARepositoryIsRequested -RequestedRepo 'second'
-    ThenTheRepositoryShouldBeLike -name 'second'
+    ThenRepositoryReturned -name 'second'
 }
 
 Describe 'Find-BBServerRepository.When searching for a repository that matches a multiple repositories' {
     GivenARepository -Name 'first'
     GivenARepository -Name 'first-repo'
+    GivenARepository -Name 'doesntMatch'
     WhenARepositoryIsRequested -RequestedRepo 'first*'
-    ThenItShouldReturnMultipleRepositories
-    ThenTheRepositoryShouldBeLike -name 'first*'
+    ThenRepositoryReturned -name 'first', 'first-repo'
 }
