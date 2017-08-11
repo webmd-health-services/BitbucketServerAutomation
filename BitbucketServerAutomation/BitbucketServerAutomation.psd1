@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.4.0'
+    ModuleVersion = '0.5.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -137,11 +137,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerPullRequest` function for getting pull requests.
-* Created `Merge-BBServerPullRequest` function for merging a pull request.
-* Created `New-BBServerPullRequest` function for creating a pull request.
-* Renamed `Get-BBServerFile` function's `FilePath` and `FileName` parameters to `Path` and `Filter`, respectively, to make it clearer what each parameter does.
-* `Get-BBServerFile` now filters on the whole path, not just the file name. 
+* Created `Find-BBServerRepository` function for finding a repository without knowing what the project is.
 '@
 
         } # End of PSData hashtable
