@@ -66,37 +66,39 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
     # Format files (.ps1xml) to be loaded when importing this module
     FormatsToProcess = @( 
-                            'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
-                            'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
-                        )
+        'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
+        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
+    )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @( 
-                            'Get-BBServerBranch',
-                            'Get-BBServerCommitBuildStatus',
-                            'Get-BBServerFile',
-                            'Get-BBServerProject',
-                            'Get-BBServerPullRequest',
-                            'Get-BBServerPullRequestSetting',
-                            'Get-BBServerRepository', 
-                            'Get-BBServerTag',
-                            'Merge-BBServerPullRequest',
-                            'Invoke-BBServerRestMethod',
-                            'Move-BBServerRepository',
-                            'New-BBServerBranch',
-                            'New-BBServerConnection', 
-                            'New-BBServerProject',
-                            'New-BBServerPullRequest',
-                            'New-BBServerRepository', 
-                            'New-BBServerTag',
-                            'Remove-BBServerRepository',
-                            'Rename-BBServerRepository',
-                            'Set-BBServerCommitBuildStatus',
-                            'Set-BBServerDefaultBranch',
-                            'Set-BBServerPullRequestSetting' )
+    FunctionsToExport = @(  
+        'Find-BBServerRepository',
+        'Get-BBServerBranch',
+        'Get-BBServerCommitBuildStatus',
+        'Get-BBServerFile',
+        'Get-BBServerProject',
+        'Get-BBServerPullRequest',
+        'Get-BBServerPullRequestSetting',
+        'Get-BBServerRepository', 
+        'Get-BBServerTag',
+        'Invoke-BBServerRestMethod',
+        'Merge-BBServerPullRequest',
+        'Move-BBServerRepository',
+        'New-BBServerBranch',
+        'New-BBServerConnection', 
+        'New-BBServerProject',
+        'New-BBServerPullRequest',
+        'New-BBServerRepository', 
+        'New-BBServerTag',
+        'Remove-BBServerRepository',
+        'Rename-BBServerRepository',
+        'Set-BBServerCommitBuildStatus',
+        'Set-BBServerDefaultBranch',
+        'Set-BBServerPullRequestSetting' 
+    )
 
     # Cmdlets to export from this module
     CmdletsToExport = '*'
