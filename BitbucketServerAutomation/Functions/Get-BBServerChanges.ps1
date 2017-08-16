@@ -60,7 +60,7 @@ function Get-BBServerChanges
 
     while ( -not $lastPage )
     {
-        $ResourcePath = ('projects/{0}/repos/{1}/compare/changes?from={2}&to={3}' -f $ProjectKey, $RepoName, $From, $To)
+        $resourcePath = ('projects/{0}/repos/{1}/compare/changes?from={2}&to={3}' -f $ProjectKey, $RepoName, $From, $To)
         $changes = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}&limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
         if( $changes)
         {
