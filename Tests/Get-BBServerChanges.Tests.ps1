@@ -110,6 +110,7 @@ function ThenItShouldThrowAnError
 Describe 'Get-BBServerChanges.when checking for changes on a branch that does not exist' {
     GivenARepositoryWithBranches -branchName 'branchA'
     WhenGettingChanges -From 'branchA' -To 'branchIDontExist'
+    ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
     ThenWeShouldGetNoChanges
 }
 

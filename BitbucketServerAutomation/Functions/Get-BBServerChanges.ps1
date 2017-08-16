@@ -14,22 +14,15 @@ function Get-BBServerChanges
 {
     <#
     .SYNOPSIS
-    Gets a list of branches from a repository.
+    Gets a list of Changes from two commits or refs in a repository.
 
     .DESCRIPTION
-    The `Get-BBServerBranch` function returns a list of all branches in a Bitbucket Server repository.
+    The `Get-BBServerChanges` function returns a list of Changes from two commits or refs in a repository.
     
-    If you pass a branch name, the function will only return the information for the named branch and will return nothing if no branches are found that match the search criteria. Wildcards are allowed to search for files.
-
     .EXAMPLE
-    Get-BBServerBranch -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo'
+    Get-BBServerChanges -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -From "TestBranch" -To "master"
 
-    Demonstrates how to get the properties of all branches in the `TestRepo` repository.
-
-    .EXAMPLE
-    Get-BBServerBranch -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -BranchName 'master'
-
-    Demonstrates how to get the properties for the master branch in the `TestRepo` repository.
+    Demonstrates how to get the properties of all changes between testBranch and master branches in the `TestRepo` repository.
     #>
     [CmdletBinding()]
     param(
@@ -80,6 +73,5 @@ function Get-BBServerChanges
             return
         }
     }
-
     return $changesList
 }
