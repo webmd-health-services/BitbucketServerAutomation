@@ -22,14 +22,12 @@ function GivenARepositoryWithBranches
     param(
         $BranchName
     )
-    $script:bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerChanges Tests'
     $repository = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName 
     if($repository)
     {
         Remove-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName -Force
     }
     New-BBServerRepository -Connection $script:bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
-    $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerChanges Tests' 
     $targetRepo = Get-BBServerRepository -Connection $script:bbConnection -ProjectKey $projectKey -Name $repoName
     $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
     $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}' -f $RepoName)
@@ -64,9 +62,19 @@ function GivenANewBranch
         [string]
         $start
     )
-    New-BBServerBranch -Connection $script:bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $branchName -StartPoint $start
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $branchName -StartPoint $start
 
 }
+
+function GivenANewTag
+{
+    param(
+        [string]    
+        $name
+    )
+    New-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName -Name $name -CommitID $commitHash
+}
+
 function WhenGettingChanges
 {
     param(
@@ -75,7 +83,7 @@ function WhenGettingChanges
         [string]
         $from
     )   
-    $script:changesList = Get-BBServerChanges -Connection $script:bbConnection -ProjectKey $projectKey -RepoName $repoName -From $from -To $To
+    $script:changesList = Get-BBServerChanges -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $from -To $To
 }
 
 function ThenWeShouldGetNoChanges
@@ -125,6 +133,14 @@ Describe 'Get-BBServerChanges.when checking for changes on a commit we should ge
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From $script:commitHash -To 'branchB'
+    ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
+}
+
+Describe 'Get-BBServerChanges.when checking for changes on a tag we should get changes' {
+    GivenARepositoryWithBranches -branchName 'branchA'
+    GivenANewBranch -branchName 'branchB' -start 'master'
+    GivenANewTag -Name 'testTag'
+    WhenGettingChanges -From 'testTag' -To 'branchB'
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
