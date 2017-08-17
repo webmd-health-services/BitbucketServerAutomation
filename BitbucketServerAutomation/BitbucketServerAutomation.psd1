@@ -138,7 +138,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerChanges` function for getting changes between two commits or refs.
+* Created `Get-BBServerChanges` function for getting changes between two commits.
 '@
 
         } # End of PSData hashtable
