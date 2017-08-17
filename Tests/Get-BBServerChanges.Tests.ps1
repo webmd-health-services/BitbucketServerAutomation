@@ -144,6 +144,23 @@ Describe 'Get-BBServerChanges.when checking for changes on a tag we should get c
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
+Describe 'Get-BBServerChanges.when checking for changes on a tag with a name that needs encoding we should get changes' {
+    GivenARepositoryWithBranches -branchName 'branchA'
+    GivenANewBranch -branchName 'branchB' -start 'master'
+    GivenANewTag -Name 'feature/test+tag.please&Encode'
+    WhenGettingChanges -From 'feature/test+tag.please&Encode' -To 'branchB'
+    ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
+}
+
+Describe 'Get-BBServerChanges.when checking for changes on a tag with a name that has invalid characters we should not get changes' {
+    GivenARepositoryWithBranches -branchName 'branchA'
+    GivenANewBranch -branchName 'branchB' -start 'master'
+    GivenANewTag -Name 'feature/test+tag?please&Encode'
+    WhenGettingChanges -From 'feature/test+tag?please&Encode' -To 'branchB'
+    ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
+    ThenWeShouldGetNoChanges
+}
+
 Describe 'Get-BBServerChanges.when checking for changes on two branches that are up to date we should get No changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
