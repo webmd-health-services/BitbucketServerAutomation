@@ -77,6 +77,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     FunctionsToExport = @(  
         'Find-BBServerRepository',
         'Get-BBServerBranch',
+        'Get-BBServerChanges',
         'Get-BBServerCommitBuildStatus',
         'Get-BBServerFile',
         'Get-BBServerProject',
@@ -137,11 +138,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerPullRequest` function for getting pull requests.
-* Created `Merge-BBServerPullRequest` function for merging a pull request.
-* Created `New-BBServerPullRequest` function for creating a pull request.
-* Renamed `Get-BBServerFile` function's `FilePath` and `FileName` parameters to `Path` and `Filter`, respectively, to make it clearer what each parameter does.
-* `Get-BBServerFile` now filters on the whole path, not just the file name. 
+* Created `Get-BBServerChanges` function for getting changes between two commits.
 '@
 
         } # End of PSData hashtable
