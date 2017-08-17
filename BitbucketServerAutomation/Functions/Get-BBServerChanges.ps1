@@ -14,10 +14,10 @@ function Get-BBServerChanges
 {
     <#
     .SYNOPSIS
-    Gets a list of Changes from two commits or refs in a repository.
+    Gets a list of Changes from two commits in a repository.
 
     .DESCRIPTION
-    The `Get-BBServerChanges` function returns a list of Changes from two commits or refs in a repository.
+    The `Get-BBServerChanges` function returns a list of Changes from two commits in a repository.
     
     .EXAMPLE
     Get-BBServerChanges -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -From "TestBranch" -To "master"
@@ -56,22 +56,18 @@ function Get-BBServerChanges
     $lastPage = $false
     $nextPageStart = 0
     $changes = $null
-    $changesList = @()
 
     while ( -not $lastPage )
     {
-        $resourcePath = ('projects/{0}/repos/{1}/compare/changes?from={2}&to={3}' -f $ProjectKey, $RepoName, $From, $To)
+        $resourcePath = ('projects/{0}/repos/{1}/compare/changes?from={2}&to={3}' -f $ProjectKey, $RepoName, [Web.HttpUtility]::UrlEncode($From), [Web.HttpUtility]::UrlEncode($To))
         $changes = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}&limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
         if( $changes)
         {
             $lastPage = $changes.isLastPage
             $nextPageStart = $changes.nextPageStart
-            $changesList += $changes.values
+            return $changes.values
+            continue
         }
-        else
-        {
-            return
-        }
+        return
     }
-    return $changesList
 }
