@@ -80,6 +80,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Get-BBServerChanges',
         'Get-BBServerCommitBuildStatus',
         'Get-BBServerFile',
+        'Get-BBServerHook',
         'Get-BBServerProject',
         'Get-BBServerPullRequest',
         'Get-BBServerPullRequestSetting',
@@ -139,6 +140,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Created `Find-BBServerRepository` function for finding a repository without knowing what the project is.
+* Created `Get-BBServerHook` function to retrieve hooks from a repository.
 '@
 
         } # End of PSData hashtable
