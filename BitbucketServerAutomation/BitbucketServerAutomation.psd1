@@ -76,6 +76,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # Functions to export from this module
     FunctionsToExport = @(  
         'Find-BBServerRepository',
+        'Disable-BBServerHook',
+        'Enable-BBServerHook',
         'Get-BBServerBranch',
         'Get-BBServerChanges',
         'Get-BBServerCommitBuildStatus',
@@ -141,6 +143,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             ReleaseNotes = @'
 * Created `Find-BBServerRepository` function for finding a repository without knowing what the project is.
 * Created `Get-BBServerHook` function to retrieve hooks from a repository.
+* Created `Enable-BBServerHook` function to enable a hook in a repository.
+* Created `Disable-BBServerHook` function to disable a hook in a repository.
 '@
 
         } # End of PSData hashtable

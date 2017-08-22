@@ -37,7 +37,7 @@ function WhenGettingHooks
     $script:getHooks = @(Get-BBServerHook -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName $WithHookFilter)
 }
 
-function ShouldNotThrowErrors
+function ThenShouldNotThrowErrors
 {
     param(
     )
@@ -47,7 +47,7 @@ function ShouldNotThrowErrors
     }
 }
 
-function ShouldReturnAllHooks
+function ThenShouldReturnAllHooks
 {
     param(
     )
@@ -61,7 +61,7 @@ function ShouldReturnAllHooks
     }
 }
 
-function ShouldReturnSpecificHook
+function ThenShouldReturnSpecificHook
 {
     param(
         [string]
@@ -77,7 +77,7 @@ function ShouldReturnSpecificHook
     }
 }
 
-function ShouldNotReturnHooks
+function ThenShouldNotReturnHooks
 {
     param(
     )
@@ -90,20 +90,20 @@ function ShouldNotReturnHooks
 Describe 'Get-BBServerHook.when returning all hooks from a repository' {
     GivenARepository
     WhenGettingHooks
-    ShouldNotThrowErrors
-    ShouldReturnAllHooks
+    ThenShouldNotThrowErrors
+    ThenShouldReturnAllHooks
 }
 
 Describe 'Get-BBServerHook.when searching for a specific hook from a repository' {
     GivenARepository
     WhenGettingHooks -WithHookFilter $hookKey
-    ShouldNotThrowErrors
-    ShouldReturnSpecificHook $hookKey
+    ThenShouldNotThrowErrors
+    ThenShouldReturnSpecificHook $hookKey
 }
 
 Describe 'Get-BBServerHook.when searching for a hook that does not exist' {
     GivenARepository
     WhenGettingHooks -WithHookFilter 'hook.that.does.not.exist'
-    ShouldNotThrowErrors
-    ShouldNotReturnHooks
+    ThenShouldNotThrowErrors
+    ThenShouldNotReturnHooks
 }
