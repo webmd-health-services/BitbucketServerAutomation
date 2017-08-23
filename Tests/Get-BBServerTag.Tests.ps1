@@ -64,20 +64,7 @@ function GivenARepositoryWithTaggedCommits
         $commitHash = git rev-parse HEAD 2>$null
     
         git push --set-upstream $cloneRepo master 2>&1 | Write-Debug
-
-        if( $WithNumberOfTags )
-        {
-            for( $idx = 0; $idx -lt $WithNumberOfTags; ++$idx )
-            {
-                $newFile = New-Item -Name ('newfile{0}' -f $idx) -ItemType 'file' -Force -Value ('new file # {0}!!' -f $idx)
-                git add $newFile 2>&1 | Write-Debug
-                git commit -m ('adding file, commit no {0} for project-key: {1}' -f $idx, $key) 2>&1 | Write-Debug
-                $commitHash = git rev-parse HEAD 2>$null
-                git push 2>&1 | Write-Debug
-
-                New-BBServerTag -Connection $conn -ProjectKey $key -Name $idx -CommitID $commitHash -RepositoryKey $repoName
-            }
-        }
+        
         if( $WithTagNamed )
         {
             $newFile = New-Item -Name 'newfile' -ItemType 'file' -Force -Value 'new file!!'
@@ -127,13 +114,6 @@ function ThenTagsShouldBeObtained
         }
         
     }
-}
-
-Describe 'Get-BBServerTag when getting more tags than the default limit' {
-    $numTags = 26
-    GivenARepositoryWithTaggedCommits -WithNumberOfTags $numTags
-    $tags = WhenGettingTags
-    ThenTagsShouldBeObtained -WithTags $tags -NumberOfTags $numTags
 }
 
 Describe 'Get-BBServerTag when getting the most recent tag' {
