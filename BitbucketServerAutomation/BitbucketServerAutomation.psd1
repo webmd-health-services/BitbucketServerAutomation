@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.6.0'
+    ModuleVersion = '0.7.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -77,7 +77,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     FunctionsToExport = @(  
         'Find-BBServerRepository',
         'Get-BBServerBranch',
-        'Get-BBServerChanges',
+        'Get-BBServerChange',
         'Get-BBServerCommitBuildStatus',
         'Get-BBServerFile',
         'Get-BBServerProject',
@@ -138,7 +138,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Find-BBServerRepository` function for finding a repository without knowing what the project is.
+* ***BREAKING CHANGE***: Renamed Get-BBServerChanges to Get-BBServerChange.
 '@
 
         } # End of PSData hashtable

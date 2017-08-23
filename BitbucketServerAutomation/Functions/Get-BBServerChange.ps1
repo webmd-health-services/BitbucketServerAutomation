@@ -10,17 +10,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function Get-BBServerChanges
+function Get-BBServerChange
 {
     <#
     .SYNOPSIS
     Gets a list of Changes from two commits in a repository.
 
     .DESCRIPTION
-    The `Get-BBServerChanges` function returns a list of Changes from two commits in a repository.
+    The `Get-BBServerChange` function returns a list of Changes from two commits in a repository.
     
     .EXAMPLE
-    Get-BBServerChanges -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -From "TestBranch" -To "master"
+    Get-BBServerChange -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -From "TestBranch" -To "master"
 
     Demonstrates how to get the properties of all changes between testBranch and master branches in the `TestRepo` repository.
     #>

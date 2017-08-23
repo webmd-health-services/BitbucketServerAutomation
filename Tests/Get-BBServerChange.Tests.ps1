@@ -14,7 +14,7 @@
 
 $projectKey = 'GBBSCHANGE'
 $repoName = 'RepositoryWithChanges'
-$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerChanges Tests' 
+$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerChange Tests' 
 $commitHash = $null
 function GivenARepositoryWithBranches
 {
@@ -38,7 +38,7 @@ function GivenARepositoryWithBranches
     {
         git clone $repoClonePath $repoName 2>&1
         cd $repoName
-        git commit --allow-empty -m 'Initializing repository for `Get-BBServerChanges` tests' 2>&1
+        git commit --allow-empty -m 'Initializing repository for `Get-BBServerChange` tests' 2>&1
         git push -u origin 2>&1
         git checkout -b $BranchName
         New-Item -Path 'test.txt' -ItemType 'File' -Force
@@ -83,7 +83,7 @@ function WhenGettingChanges
         [string]
         $from
     )   
-    $script:changesList = Get-BBServerChanges -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $from -To $To
+    $script:changesList = Get-BBServerChange -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -From $from -To $To
 }
 
 function ThenWeShouldGetNoChanges
@@ -115,28 +115,28 @@ function ThenItShouldThrowAnError
     }
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on a branch that does not exist' {
+Describe 'Get-BBServerChange.when checking for changes on a branch that does not exist' {
     GivenARepositoryWithBranches -branchName 'branchA'
     WhenGettingChanges -From 'branchA' -To 'branchIDontExist'
     ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
     ThenWeShouldGetNoChanges
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on two branches we should get changes' {
+Describe 'Get-BBServerChange.when checking for changes on two branches we should get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From 'branchA' -To 'branchB'
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on a commit we should get changes' {
+Describe 'Get-BBServerChange.when checking for changes on a commit we should get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From $script:commitHash -To 'branchB'
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on a tag we should get changes' {
+Describe 'Get-BBServerChange.when checking for changes on a tag we should get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     GivenANewTag -Name 'testTag'
@@ -144,7 +144,7 @@ Describe 'Get-BBServerChanges.when checking for changes on a tag we should get c
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on a tag with a name that needs encoding we should get changes' {
+Describe 'Get-BBServerChange.when checking for changes on a tag with a name that needs encoding we should get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     GivenANewTag -Name 'feature/test+tag.please&Encode'
@@ -152,7 +152,7 @@ Describe 'Get-BBServerChanges.when checking for changes on a tag with a name tha
     ThenWeShouldGetChanges -ExpectedChanges 'test.txt'
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on a tag with a name that has invalid characters we should not get changes' {
+Describe 'Get-BBServerChange.when checking for changes on a tag with a name that has invalid characters we should not get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     GivenANewTag -Name 'feature/test+tag?please&Encode'
@@ -161,7 +161,7 @@ Describe 'Get-BBServerChanges.when checking for changes on a tag with a name tha
     ThenWeShouldGetNoChanges
 }
 
-Describe 'Get-BBServerChanges.when checking for changes on two branches that are up to date we should get No changes' {
+Describe 'Get-BBServerChange.when checking for changes on two branches that are up to date we should get No changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From 'branchB' -To 'master'
