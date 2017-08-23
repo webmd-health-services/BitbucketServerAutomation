@@ -94,7 +94,7 @@ function Remove-BBServerRepository
         $confirmMessage = 'Do you want to remove repository ''{0}/{1}'' from {2}?{3}{3}This operation is PERMANENT and can''t be undone!' -f $ProjectKey,$Name,$Connection.Uri,[Environment]::NewLine
         if( $Force -or $PSCmdlet.ShouldProcess($whatIfMessage,$confirmMessage,'Confirm Permanently Deleting Repository') )
         {
-            $result = Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$Name) -Verbose
+            $result = Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$Name)
         
             if( $result )
             {

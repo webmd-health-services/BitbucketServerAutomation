@@ -48,7 +48,7 @@ function GivenARepository
     try
     {
         $script:repoName = '{0}-{1}' -f ($PSCommandPath | Split-Path -Leaf),[IO.Path]::GetRandomFileName()
-        $script:repository = New-BBServerRepository -Connection $conn -Name $repoName -ProjectKey $key -Verbose
+        $script:repository = New-BBServerRepository -Connection $conn -Name $repoName -ProjectKey $key
         $cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
         git init 2>&1 | Write-Debug
         #clone, commit and push a new file to the new repo
