@@ -55,35 +55,16 @@ function Get-BBServerHook
     
     Set-StrictMode -Version 'Latest'
     
-    if( !(Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name $RepoName) )
-    {
-        return
-    }
-    
     $resourcePath = ('projects/{0}/repos/{1}/settings/hooks' -f $ProjectKey, $RepoName)
-    $nextPageStart = 0
-    $isLastPage = $false
-    $hookList = $null
     
-    while( $isLastPage -eq $false )
-    {
-        $getHooks = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
-        if( $getHooks.isLastPage -eq $false )
-        {
-            $nextPageStart = $getHooks.nextPageStart
-        }
-        else
-        {
-            $isLastPage = $true
-        }
-        
-        $hookList += $getHooks.values
-    }
+    $getHooks = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged
     
     if( $HookKey )
     {
-        $hookList = $hookList | Where-Object { $_.details.key -like $HookKey }
+        return $getHooks | Where-Object { $_.details.key -like $HookKey }
     }
-    
-    return $hookList
+    else
+    {
+        return $getHooks
+    }
 }

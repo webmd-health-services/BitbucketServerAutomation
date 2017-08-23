@@ -12,14 +12,14 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 Set-StrictMode -Version 'Latest'
 
-$ProjectKey = 'NBBSBRANCH'
+$ProjectKey = 'NBBSPR'
 $RepoName = 'repositorywithbranches'
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
 $Title = 'pull-request-Title'
 $Start = 'master'
 $Name = 'tagname'
-$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'New-BBServerBranch Tests'
+$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'New-BBServerPullRequest Tests'
 $TempRepoRoot = $null
 $PullRequest = $null
 

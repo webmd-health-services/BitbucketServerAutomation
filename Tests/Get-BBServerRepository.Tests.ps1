@@ -58,8 +58,4 @@ Describe 'Get-BBServerRepository when getting a repository that does not exist' 
     It 'should not return anything' {
         $repo | Should BeNullOrEmpty
     }
-
-    It 'should write an error' {
-        $Global:Error | Should Match 'does not exist'
-    }
 }

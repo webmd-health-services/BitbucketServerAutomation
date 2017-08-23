@@ -56,29 +56,13 @@ function Get-BBServerBranch
     Set-StrictMode -Version 'Latest'
     
     $resourcePath = ('projects/{0}/repos/{1}/branches' -f $ProjectKey, $RepoName)
-    $nextPageStart = 0
-    $isLastPage = $false
-    $branchList = $null
     
-    while( $isLastPage -eq $false )
-    {
-        $getBranches = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}&start={2}' -f $resourcePath, [int16]::MaxValue, $nextPageStart)
-        if( $getBranches.isLastPage -eq $false )
-        {
-            $nextPageStart = $getBranches.nextPageStart
-        }
-        else
-        {
-            $isLastPage = $true
-        }
-
-        $branchList += $getBranches.values
-    }
+    $getBranches = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged
     
     if( $BranchName )
     {
-        $branchList = $branchList | Where-Object { $_.displayId -like $BranchName }
+        return $getBranches | Where-Object { $_.displayId -like $BranchName }
     }
     
-    return $branchList
+    return $getBranches
 }

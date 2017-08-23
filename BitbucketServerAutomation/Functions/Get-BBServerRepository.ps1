@@ -59,37 +59,16 @@ function Get-BBServerRepository
     Set-StrictMode -Version 'Latest'
     
     $resourcePath = 'projects/{0}/repos' -f $ProjectKey
-    $findWithWildcard = $false
+    
+    $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $resourcePath -IsPaged -ErrorVariable 'errors'
+    
     if( $Name )
     {
-        if( [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($Name) )
-        {
-            $findWithWildcard = $true
-        }
-        else
-        {
-            $resourcePath = '{0}/{1}' -f $resourcePath,[uri]::EscapeDataString($Name)
-        }
+        $result | Where-Object { return $_.Name -like $Name } | Add-PSTypeName -RepositoryInfo
     }
-
-    $result = $null
-    $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath,[int16]::MaxValue) -ErrorVariable 'errors'
-    if( -not $result )
+    else
     {
-        return
-    }
     
-    if( ($result | Get-Member -Name 'values') )
-    {
-        if( $findWithWildcard )
-        {
-            $result = $result.values | Where-Object { return $_.Name -like $Name }
-        }
-        else
-        {
-            $result = $result.values
-        }
+        $result | Add-PSTypeName -RepositoryInfo
     }
-
-    $result | Add-PSTypeName -RepositoryInfo
 }

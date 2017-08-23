@@ -46,9 +46,8 @@ function Get-BBServerTag
   
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-    $limit = [int16]::MaxValue
-    Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags?limit={2}' -f $ProjectKey, $RepositoryKey, $limit) |
-        Select-Object -ExpandProperty 'values'
+    
+    Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}/tags' -f $ProjectKey, $RepositoryKey) -IsPaged
 }
 
  

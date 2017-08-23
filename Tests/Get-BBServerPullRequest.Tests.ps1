@@ -12,7 +12,7 @@
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$ProjectKey = 'GBBSBRANCH'
+$ProjectKey = 'GBBSPR'
 $RepoName = 'RepositoryWithBranches'
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
