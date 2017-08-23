@@ -37,15 +37,22 @@ function GivenARepositoryWithBranches
     try
     {
         git clone $repoClonePath $repoName 2>&1
-        cd $repoName
-        git commit --allow-empty -m 'Initializing repository for `Get-BBServerChange` tests' 2>&1
-        git push -u origin 2>&1
-        git checkout -b $BranchName
-        New-Item -Path 'test.txt' -ItemType 'File' -Force
-        git add .
-        git commit --allow-empty -m 'adding file to create a change' 2>&1
-        $script:commitHash = git rev-parse HEAD 2>$null
-        git push -u origin $BranchName
+        Push-Location $repoName
+        try
+        {
+            git commit --allow-empty -m 'Initializing repository for `Get-BBServerChange` tests' 2>&1
+            git push -u origin 2>&1
+            git checkout -b $BranchName 2>&1
+            New-Item -Path 'test.txt' -ItemType 'File' -Force
+            git add .
+            git commit --allow-empty -m 'adding file to create a change' 2>&1
+            $script:commitHash = git rev-parse HEAD 2>$null
+            git push -u origin $BranchName 2>&1
+        }
+        finally
+        {
+            Pop-Location
+        }
     }
     finally
     {
@@ -77,6 +84,7 @@ function GivenANewTag
 
 function WhenGettingChanges
 {
+    [CmdletBinding()]
     param(
         [string]
         $To,
@@ -117,7 +125,7 @@ function ThenItShouldThrowAnError
 
 Describe 'Get-BBServerChange.when checking for changes on a branch that does not exist' {
     GivenARepositoryWithBranches -branchName 'branchA'
-    WhenGettingChanges -From 'branchA' -To 'branchIDontExist'
+    WhenGettingChanges -From 'branchA' -To 'branchIDontExist' -ErrorAction SilentlyContinue
     ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
     ThenWeShouldGetNoChanges
 }
@@ -155,8 +163,7 @@ Describe 'Get-BBServerChange.when checking for changes on a tag with a name that
 Describe 'Get-BBServerChange.when checking for changes on a tag with a name that has invalid characters we should not get changes' {
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
-    GivenANewTag -Name 'feature/test+tag?please&Encode'
-    WhenGettingChanges -From 'feature/test+tag?please&Encode' -To 'branchB'
+    WhenGettingChanges -From 'feature/test+tag?please&Encode' -To 'branchB' -ErrorAction SilentlyContinue
     ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
     ThenWeShouldGetNoChanges
 }

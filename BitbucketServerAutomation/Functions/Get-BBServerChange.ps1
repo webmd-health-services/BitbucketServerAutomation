@@ -52,7 +52,10 @@ function Get-BBServerChange
         $To
 
     )
+
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
+
     $lastPage = $false
     $nextPageStart = 0
     $changes = $null
