@@ -10,26 +10,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-function Get-BBServerBranch
+function Enable-BBServerHook
 {
     <#
     .SYNOPSIS
-    Gets a list of branches from a repository.
+    Enables a hook in a repository.
 
     .DESCRIPTION
-    The `Get-BBServerBranch` function returns a list of all branches in a Bitbucket Server repository.
+    The `Enable-BBServerHook` function sets the value of the `Enabled` property to `true` for a designated hook in a Bitbucket Server repository.
     
-    If you pass a branch name, the function will only return the information for the named branch and will return nothing if no branches are found that match the search criteria. Wildcards are allowed to search for files.
+    If you pass a hook key that does not exist in the target repository, an error will be thrown.
 
     .EXAMPLE
-    Get-BBServerBranch -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo'
+    Enable-BBServerHook -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -HookKey 'com.atlassian.bitbucket.server.example-hook-key'
 
-    Demonstrates how to get the properties of all branches in the `TestRepo` repository.
-
-    .EXAMPLE
-    Get-BBServerBranch -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -BranchName 'master'
-
-    Demonstrates how to get the properties for the master branch in the `TestRepo` repository.
+    Demonstrates how to enable a hook with key `com.atlassian.bitbucket.server.example-hook-key` in the `TestRepo` repository.
     #>
     [CmdletBinding()]
     param(
@@ -48,21 +43,15 @@ function Get-BBServerBranch
         # The name of a specific repository.
         $RepoName,
 
+        [Parameter(Mandatory=$true)]
         [string]
-        # The name of the branch to search for.
-        $BranchName
+        # The name of the repository hook to enable.
+        $HookKey
     )
     
     Set-StrictMode -Version 'Latest'
     
-    $resourcePath = ('projects/{0}/repos/{1}/branches' -f $ProjectKey, $RepoName)
+    $resourcePath = ('projects/{0}/repos/{1}/settings/hooks/{2}/enabled' -f $ProjectKey, $RepoName, $HookKey)
     
-    $getBranches = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged
-    
-    if( $BranchName )
-    {
-        return $getBranches | Where-Object { $_.displayId -like $BranchName }
-    }
-    
-    return $getBranches
+    Invoke-BBServerRestMethod -Connection $Connection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath
 }

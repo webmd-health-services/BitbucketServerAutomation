@@ -58,7 +58,10 @@ function Invoke-BBServerRestMethod
 
         [Parameter(ValueFromPipeline=$true)]
         [object]
-        $InputObject
+        $InputObject,
+        
+        [switch]
+        $IsPaged
     )
 
     Set-StrictMode -Version 'Latest'
@@ -88,7 +91,33 @@ function Invoke-BBServerRestMethod
 
     try
     {
-        Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+        if( $IsPaged )
+        {
+            $nextPageStart = 0
+            $isLastPage = $false
+            
+            while( $isLastPage -eq $false )
+            {
+                $uriPagedPath = ('{0}?limit={1}&start={2}' -f $uriPath, [int16]::MaxValue, $nextPageStart)
+                $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
+                
+                $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+                if( $getStream.isLastPage -eq $false )
+                {
+                    $nextPageStart = $getStream.nextPageStart
+                }
+                else
+                {
+                    $isLastPage = $true
+                }
+                
+                $getStream | Select-Object -ExpandProperty 'values'
+            }
+        }
+        else
+        {
+            Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+        }
     }
     catch [Net.WebException]
     {

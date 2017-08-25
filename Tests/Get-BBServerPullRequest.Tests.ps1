@@ -12,7 +12,7 @@
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-$ProjectKey = 'GBBSBRANCH'
+$ProjectKey = 'GBBSPR'
 $RepoName = 'RepositoryWithBranches'
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
@@ -57,9 +57,9 @@ function GivenAPullRequest
     )
     try
     {
-        git checkout -b $FromBranchName
-        git commit --allow-empty -m 'test commit'
-        git push -u origin HEAD
+        git checkout -b $FromBranchName 2>&1
+        git commit --allow-empty -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally
     {
@@ -82,9 +82,9 @@ function GivenTwoPullRequests
     )
     try
     {
-        git checkout -b $FromBranchName
-        git commit --allow-empty -m 'test commit'
-        git push -u origin HEAD
+        git checkout -b $FromBranchName 2>&1
+        git commit --allow-empty -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally
     {
@@ -108,9 +108,9 @@ function GivenNoPullRequests
     )
     try
     {
-        git checkout -b $FromBranchName
-        git commit --allow-empty -m 'test commit'
-        git push -u origin HEAD
+        git checkout -b $FromBranchName 2>&1
+        git commit --allow-empty -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally
     {

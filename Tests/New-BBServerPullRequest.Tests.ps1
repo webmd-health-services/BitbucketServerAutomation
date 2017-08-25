@@ -12,14 +12,14 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 Set-StrictMode -Version 'Latest'
 
-$ProjectKey = 'NBBSBRANCH'
+$ProjectKey = 'NBBSPR'
 $RepoName = 'repositorywithbranches'
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
 $Title = 'pull-request-Title'
 $Start = 'master'
 $Name = 'tagname'
-$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'New-BBServerBranch Tests'
+$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'New-BBServerPullRequest Tests'
 $TempRepoRoot = $null
 $PullRequest = $null
 
@@ -48,9 +48,9 @@ function GivenARepository {
 }
 function GivenABranchWithCommits {
     try {
-        git checkout -b $Script:FromBranchName
-        git commit --allow-empty -m 'test commit'
-        git push -u origin HEAD
+        git checkout -b $Script:FromBranchName 2>&1
+        git commit --allow-empty -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -61,8 +61,8 @@ function GivenABranchWithCommits {
 
 function GivenABranchWithNoCommits {        
     try {
-        git checkout -b $Script:FromBranchName
-        git push -u origin HEAD
+        git checkout -b $Script:FromBranchName 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -73,8 +73,8 @@ function GivenABranchWithNoCommits {
 
 function GivenNoDestinationBranchExists {
     try {
-        git checkout -b $Script:FromBranchName
-        git push -u origin HEAD
+        git checkout -b $Script:FromBranchName 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -83,11 +83,11 @@ function GivenNoDestinationBranchExists {
 }
 function GivenATag {
     try {
-        git checkout -b $Script:FromBranchName
+        git checkout -b $Script:FromBranchName 2>&1
 
-        git commit --allow-empty -m "testing tag"
+        git commit --allow-empty -m "testing tag" 2>&1
         $CommitId = git rev-parse HEAD
-        git push -u origin HEAD
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -109,7 +109,7 @@ function WhenAPullRequestIsCreated {
         $From
     )
     $Global:Error.clear()
-    $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $From -To $ToBranchName -Title $Title
+    $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $From -To $ToBranchName -Title $Title -ErrorAction SilentlyContinue
     if ($PullRequest) {
         $Script:PullRequest = $PullRequest
     }

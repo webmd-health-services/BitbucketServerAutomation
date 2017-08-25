@@ -12,7 +12,7 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 Set-StrictMode -Version 'Latest'
 
-$ProjectKey = 'GBBSBRANCH'
+$ProjectKey = 'MBBSPR'
 $RepoName = 'repositorywithbranches'
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
@@ -49,9 +49,9 @@ function GivenARepository {
 
 function GivenAPullRequest {      
     try {   
-        git checkout -b 'branch-to-merge'
-        git commit --allow-empty -m 'test commit'
-        git push -u origin HEAD
+        git checkout -b 'branch-to-merge' 2>&1
+        git commit --allow-empty -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -72,16 +72,16 @@ function GivenAPullRequestWithConflicts {
     New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $FromBranchName -StartPoint 'master'
         
     try {
-        git checkout -b 'branch-to-merge'
+        git checkout -b 'branch-to-merge' 2>&1
         new-item .\testfile.txt -type file -value "we want a merge conflixt"
-        git add .\testfile.txt
-        git commit -m 'test commit'
-        git push -u origin HEAD
-        git checkout master
+        git add .\testfile.txt 2>&1
+        git commit -m 'test commit' 2>&1
+        git push -u origin HEAD 2>&1
+        git checkout master 2>&1
         new-item .\testfile.txt -type file -value "this is different and we dont know which we want"
-        git add .\testfile.txt
-        git commit -m 'breaking commit'
-        git push -u origin HEAD
+        git add .\testfile.txt 2>&1
+        git commit -m 'breaking commit' 2>&1
+        git push -u origin HEAD 2>&1
     }
     finally {
         Pop-Location
@@ -107,7 +107,7 @@ function GivenABadIdNumber {
 }
 function WhenThePullRequestIsMerged {
     $Global:Error.Clear()
-    Merge-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:ID -Version $Script:Version
+    Merge-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:ID -Version $Script:Version -ErrorAction SilentlyContinue
 }
 
 function  ThenItShouldBeMerged {

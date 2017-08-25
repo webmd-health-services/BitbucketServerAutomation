@@ -75,8 +75,7 @@ function Get-BBServerFile
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
     
     $resourcePath = ('projects/{0}/repos/{1}/files/{2}' -f $ProjectKey, $RepoName, $Path)
-    Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath ('{0}?limit={1}' -f $resourcePath, [int16]::MaxValue) | 
-        Select-Object -ExpandProperty 'values' |
+    Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged | 
         Where-Object {
             if( $Filter )
             {
