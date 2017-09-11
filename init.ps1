@@ -69,7 +69,7 @@ if( -not $chocoPath )
 
 # Install a local copy of Bitbucket Server.
 
-$version = '4.13.1'
+$version = '5.2.2'
 $installerPath = Join-Path -Path $env:TEMP -ChildPath ('atlassian-bitbucket-{0}-x64.exe' -f $version)
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 {
