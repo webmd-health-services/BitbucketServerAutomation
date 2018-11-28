@@ -8,3 +8,4 @@ Carbon
 Pester
 LibGit2
 .*
+!/.whiskey/
