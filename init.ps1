@@ -30,9 +30,14 @@ Set-StrictMode -Version 'Latest'
 #Requires -Version 4
 
 # Install a local copy of Bitbucket Server.
-
 $version = '5.2.2'
 $installerPath = Join-Path -Path $env:TEMP -ChildPath ('atlassian-bitbucket-{0}-x64.exe' -f $version)
+
+if( $Clean -and (Test-Path -Path $installerPath -PathType Leaf) )
+{
+    Remove-Item -Path $installerPath -Force
+}
+
 if( -not (Test-Path -Path $installerPath -PathType Leaf) )
 {
     $downloadUri = 'https://www.atlassian.com/software/stash/downloads/binary/atlassian-bitbucket-{0}-x64.exe' -f $version
