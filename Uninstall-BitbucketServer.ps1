@@ -23,12 +23,12 @@ param(
 
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath '.\Carbon\Import-Carbon.ps1' -Resolve)
+& (Join-Path -Path $PSScriptRoot -ChildPath '.\PSModules\Carbon\*\Import-Carbon.ps1' -Resolve)
 
-Get-Service -Name '*Bitbucket*' | 
+Get-Service -Name '*Bitbucket*' |
     Stop-Service -PassThru -Force |
     ForEach-Object { Uninstall-Service -Name $_.Name }
-        
+
 Remove-EnvironmentVariable -Name 'BITBUCKET_HOME' -ForComputer -ForUser -ForProcess
 Remove-EnvironmentVariable -Name 'BITBUCKET_INSTALLATION' -ForComputer -ForUser -ForProcess
 Uninstall-User -Username 'atlbitbucket'

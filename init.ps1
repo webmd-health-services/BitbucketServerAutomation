@@ -29,44 +29,6 @@ param(
 Set-StrictMode -Version 'Latest'
 #Requires -Version 4
 
-foreach( $moduleName in @( 'Pester', 'Carbon', 'LibGit2' ) )
-{
-    $modulePath = Join-Path -Path $PSScriptRoot -ChildPath $moduleName
-    if( (Test-Path -Path $modulePath -PathType Container) )
-    {
-        if( $Clean )
-        {
-            Remove-Item -Path $modulePath -Recurse -Force
-        }
-
-        continue
-    }
-
-    Save-Module -Name $moduleName -Path $PSScriptRoot
-
-    $versionDir = Join-Path -Path $modulePath -ChildPath '*.*.*'
-    if( (Test-Path -Path $versionDir -PathType Container) )
-    {
-        $versionDir = Get-Item -Path $versionDir
-        Get-ChildItem -Path $versionDir -Force | Move-Item -Destination $modulePath
-        Remove-Item -Path $versionDir
-    }
-}
-
-$chocoPath = Get-Command -Name 'choco.exe' -ErrorAction Ignore | Select-Object -ExpandProperty 'Path' 
-if( -not $chocoPath )
-{
-    Invoke-WebRequest -Uri 'https://chocolatey.org/install.ps1' -UseBasicParsing | Invoke-Expression
-    $chocoPath = Join-Path -Path $env:PROGRAMDATA -ChildPath 'chocolatey\bin\choco.exe' -Resolve
-    if( -not $chocoPath )
-    {
-        Write-Error -Message ('It looks like Chocolatey wasn''t installed.')
-        return
-    }
-}
-
-& (Join-Path -Path $PSScriptRoot -ChildPath '.\Carbon\Import-Carbon.ps1' -Resolve) 
-
 # Install a local copy of Bitbucket Server.
 
 $version = '5.2.2'
