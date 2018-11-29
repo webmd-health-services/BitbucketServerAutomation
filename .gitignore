@@ -9,3 +9,4 @@ Pester
 LibGit2
 .*
 !/.whiskey/
+/PSModules/

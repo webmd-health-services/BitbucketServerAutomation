@@ -1,0 +1,45 @@
+PublishOn:
+ - master
+
+Build:
+- Version:
+    Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
+
+- GetPowerShellModule:
+    Name: Carbon
+    Version: 2.6.*
+
+- GetPowerShellModule:
+    Name: GitAutomation
+    Version: 0.12.*
+
+- Pester4:
+    Path: Tests\*.Tests.ps1
+
+- Exec: .whiskey\bin\7-Zip\7z.exe a $(WHISKEY_OUTPUT_DIRECTORY)\BitbucketServerAutomation.zip .\BitbucketServerAutomation '-xr!*.pdb'
+
+Publish:
+- PublishPowerShellModule:
+    RepositoryName: PSGallery
+    RepositoryUri: https://powershellgallery.com/api/v2/
+    Path: BitbucketServerAutomation
+    ApiKeyID: PowerShellGallery
+
+- SetVariableFromPowerShellDataFile:
+    Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
+    Variables:
+        PrivateData:
+            PSData:
+                ReleaseNotes: RELEASE_NOTES
+
+- GitHubRelease:
+    RepositoryName: webmd-health-services/BitbucketServerAutomation
+    ApiKeyID: github.com
+    Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
+    Commitish: $(WHISKEY_SCM_COMMIT_ID)
+    Name: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
+    Description: $(RELEASE_NOTES)
+    Assets:
+    - Path: .output\BitbucketServerAutomation.zip
+      ContentType: application/zip
+      Name: BitbucketServerAutomation-$(WHISKEY_SEMVER2_NO_BUILD_METADATA).zip
