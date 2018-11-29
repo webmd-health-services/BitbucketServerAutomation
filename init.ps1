@@ -5,7 +5,7 @@ Initializes this repository for development.
 .DESCRIPTION
 The `init.ps1` script initializes this repository for development. It:
 
- * Installs NuGet packages for Pester
+ * Installs Bitbucket Server on the local machine for use in Pester tests
 #>
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,14 @@ The `init.ps1` script initializes this repository for development. It:
 # limitations under the License.
 [CmdletBinding()]
 param(
+    [string]
+    # Path to the root directory where Bitbucket Server is installed.
+    $BitbucketInstallRoot = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\Bitbucket'),
+
+    [string]
+    # Path to the application data directory for Bitbucket Server.
+    $BitbucketApplicationDataPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\ApplicationData\Bitbucket'),
+
     [Switch]
     # Removes any previously downloaded packages and re-downloads them.
     $Clean
@@ -28,9 +36,11 @@ param(
 
 Set-StrictMode -Version 'Latest'
 #Requires -Version 4
+#Requires -RunAsAdministrator
 
 # Install a local copy of Bitbucket Server.
 $version = '5.2.2'
+$bitbucketInstallPath = Join-Path -Path $BitbucketInstallRoot -ChildPath $version
 $installerPath = Join-Path -Path $env:TEMP -ChildPath ('atlassian-bitbucket-{0}-x64.exe' -f $version)
 
 if( $Clean -and (Test-Path -Path $installerPath -PathType Leaf) )
@@ -54,16 +64,14 @@ if( -not (Test-Path -Path $installerPath) )
     return
 }
 
-$installRoot = Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian'
-$bitbucketHomePath = Join-Path -Path $installRoot -ChildPath 'ApplicationData\Bitbucket'
 if( -not (Get-Service -Name '*Bitbucket*') )
 {
     $installerResponseVarfilePath = Join-Path -Path $env:TEMP -ChildPath ('atlassian.bitbucket.server.response.{0}.varfile' -f [IO.Path]::GetRandomFileName())
 
     @"
 # install4j response file for Bitbucket $($version)
-app.bitbucketHome=$($bitbucketHomePath -replace '(:|\\)','\$1')
-app.defaultInstallDir=$($installRoot -replace '(:|\\)','\$1')\\Bitbucket\\$($version)
+app.bitbucketHome=$($BitbucketApplicationDataPath -replace '(:|\\)','\$1')
+app.defaultInstallDir=$($bitbucketInstallPath -replace '(:|\\)','\$1')
 app.install.service`$Boolean=true
 app.programGroupName=Bitbucket
 installation.is.new.install=true
@@ -88,9 +96,9 @@ sys.languageId=en
     }
 }
 
-if( -not (Test-Path -Path $bitbucketHomePath -PathType Container) )
+if( -not (Test-Path -Path $BitbucketApplicationDataPath -PathType Container) )
 {
-    Write-Error -Message ('It looks like Bitbucket Server wasn''t installed because ''{0}'' doesn''t exist.' -f $bitbucketHomePath)
+    Write-Error -Message ('It looks like Bitbucket Server wasn''t installed because ''{0}'' doesn''t exist.' -f $BitbucketApplicationDataPath)
     return
 }
 
@@ -115,7 +123,7 @@ else
     $credential | Export-Clixml -Path $bbServerCredPath
 }
 
-$bbPropertiesPath = Join-Path -Path $bitbucketHomePath -ChildPath 'shared\bitbucket.properties'
+$bbPropertiesPath = Join-Path -Path $BitbucketApplicationDataPath -ChildPath 'shared\bitbucket.properties'
 $bbServerUri = 'http://{0}:7990/' -f $env:COMPUTERNAME.ToLowerInvariant()
 if( -not (Test-Path -Path $bbPropertiesPath -PathType Leaf) )
 {

@@ -12,18 +12,27 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]
     [string]
-    $BitbucketInstallationPath,
+    $BitbucketInstallationPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\Bitbucket'),
 
-    [Parameter(Mandatory=$true)]
     [string]
-    $BitbucketHomePath
+    $BitbucketApplicationDataPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\ApplicationData\Bitbucket')
 )
 
 Set-StrictMode -Version 'Latest'
+#Requires -RunAsAdministrator
 
-& (Join-Path -Path $PSScriptRoot -ChildPath '.\PSModules\Carbon\*\Import-Carbon.ps1' -Resolve)
+& {
+    $VerbosePreference = 'SilentlyContinue'
+
+    $importCarbonModulePath = (Join-Path -Path $PSScriptRoot -ChildPath '.\PSModules\Carbon\2.6.0\Import-Carbon.ps1')
+    if (-not (Test-Path -Path $importCarbonModulePath -PathType Leaf))
+    {
+        Save-Module -Name 'Carbon' -Path (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules') -RequiredVersion '2.6.0' -Force
+    }
+
+    & $importCarbonModulePath
+}
 
 Get-Service -Name '*Bitbucket*' |
     Stop-Service -PassThru -Force |
@@ -31,7 +40,13 @@ Get-Service -Name '*Bitbucket*' |
 
 Remove-EnvironmentVariable -Name 'BITBUCKET_HOME' -ForComputer -ForUser -ForProcess
 Remove-EnvironmentVariable -Name 'BITBUCKET_INSTALLATION' -ForComputer -ForUser -ForProcess
+
 Uninstall-User -Username 'atlbitbucket'
-Remove-Item -Path 'HKLM:\SOFTWARE\Atlassian\Bitbucket' -Recurse -Force -ErrorAction Ignore
-Remove-Item -Path $BitbucketInstallationPath -Recurse -Force
-Remove-Item -Path $BitbucketHomePath -Recurse -Force
+
+foreach ($path in @('HKLM:\SOFTWARE\Atlassian\Bitbucket', $BitbucketInstallationPath, $BitbucketApplicationDataPath))
+{
+    if ( (Test-Path -Path $path) )
+    {
+        Remove-Item -Path $path -Recurse -Force
+    }
+}
