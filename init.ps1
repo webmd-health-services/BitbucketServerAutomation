@@ -150,6 +150,7 @@ setup.sysadmin.emailAddress=nobody@example.com
 }
 
 Get-Service -Name '*Bitbucket*' | Start-Service
+Start-Sleep -Seconds 15
 
 $currentActivity = 'Waiting for Bitbucket Server {0} to Start' -f $version
 $status = 'Please wait. This could take several minutes'
