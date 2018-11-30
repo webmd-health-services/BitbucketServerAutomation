@@ -14,7 +14,7 @@
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
-& (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation\*\Import-GitAutomation.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon') -Force
 
 $conn = New-BBServerTestConnection -ProjectKey 'SBBSCBS' -ProjectName 'Set-BBServerCommitBuildStatus'
 

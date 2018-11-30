@@ -22,17 +22,14 @@ param(
 Set-StrictMode -Version 'Latest'
 #Requires -RunAsAdministrator
 
-& {
-    $VerbosePreference = 'SilentlyContinue'
-
-    $importCarbonModulePath = (Join-Path -Path $PSScriptRoot -ChildPath '.\PSModules\Carbon\2.6.0\Import-Carbon.ps1')
-    if (-not (Test-Path -Path $importCarbonModulePath -PathType Leaf))
-    {
-        Save-Module -Name 'Carbon' -Path (Join-Path -Path $PSScriptRoot -ChildPath 'PSModules') -RequiredVersion '2.6.0' -Force
-    }
-
-    & $importCarbonModulePath
+$carbonModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon'
+if (-not (Test-Path -Path $carbonModulePath -PathType Container))
+{
+    Write-Error -Message ('PowerShell module "Carbon" that is required for Bitbucket removal was not found at "{0}". Run the following to have "Carbon" downloaded: .\build.ps1 -Initialize' -f $carbonModulePath)
+    exit
 }
+
+Import-Module -Name $carbonModulePath -Force -Verbose:$false
 
 Get-Service -Name '*Bitbucket*' |
     Stop-Service -PassThru -Force |
