@@ -1,10 +1,7 @@
 .bbservercredential
 .bbserverlicense
-nuget.exe
-packages/**/*
-pester.xml
 Tests/BBServerAutomationTest/server.json
-Carbon
-Pester
-LibGit2
-.*
+/.*
+!/.whiskey/
+/PSModules/
+/.output/

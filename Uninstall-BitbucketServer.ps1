@@ -12,26 +12,38 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]
     [string]
-    $BitbucketInstallationPath,
+    $BitbucketInstallationPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\Bitbucket'),
 
-    [Parameter(Mandatory=$true)]
     [string]
-    $BitbucketHomePath
+    $BitbucketApplicationDataPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\ApplicationData\Bitbucket')
 )
 
 Set-StrictMode -Version 'Latest'
+#Requires -RunAsAdministrator
 
-& (Join-Path -Path $PSScriptRoot -ChildPath '.\Carbon\Import-Carbon.ps1' -Resolve)
+$carbonModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'PSModules\Carbon'
+if (-not (Test-Path -Path $carbonModulePath -PathType Container))
+{
+    Write-Error -Message ('PowerShell module "Carbon" that is required for Bitbucket removal was not found at "{0}". Run the following to have "Carbon" downloaded: .\build.ps1 -Initialize' -f $carbonModulePath)
+    exit
+}
 
-Get-Service -Name '*Bitbucket*' | 
+Import-Module -Name $carbonModulePath -Force -Verbose:$false
+
+Get-Service -Name '*Bitbucket*' |
     Stop-Service -PassThru -Force |
     ForEach-Object { Uninstall-Service -Name $_.Name }
-        
+
 Remove-EnvironmentVariable -Name 'BITBUCKET_HOME' -ForComputer -ForUser -ForProcess
 Remove-EnvironmentVariable -Name 'BITBUCKET_INSTALLATION' -ForComputer -ForUser -ForProcess
+
 Uninstall-User -Username 'atlbitbucket'
-Remove-Item -Path 'HKLM:\SOFTWARE\Atlassian\Bitbucket' -Recurse -Force -ErrorAction Ignore
-Remove-Item -Path $BitbucketInstallationPath -Recurse -Force
-Remove-Item -Path $BitbucketHomePath -Recurse -Force
+
+foreach ($path in @('HKLM:\SOFTWARE\Atlassian\Bitbucket', $BitbucketInstallationPath, $BitbucketApplicationDataPath))
+{
+    if ( (Test-Path -Path $path) )
+    {
+        Remove-Item -Path $path -Recurse -Force
+    }
+}

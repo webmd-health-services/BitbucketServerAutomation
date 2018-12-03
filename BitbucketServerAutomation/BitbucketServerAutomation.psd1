@@ -27,7 +27,7 @@
     CompanyName = 'WebMD Health Services'
 
     # Copyright statement for this module
-    Copyright = '(c) 2016 WebMD Health Services. All rights reserved.'
+    Copyright = '(c) 2016 - 2018 WebMD Health Services. All rights reserved.'
 
     # Description of the functionality provided by this module
     Description = @'

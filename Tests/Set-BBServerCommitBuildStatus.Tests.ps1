@@ -14,7 +14,7 @@
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
-& (Join-Path -Path $PSScriptRoot -ChildPath '..\LibGit2\Import-LibGit2.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $conn = New-BBServerTestConnection -ProjectKey 'SBBSCBS' -ProjectName 'Set-BBServerCommitBuildStatus'
 
@@ -69,7 +69,7 @@ function New-BuildEnvironment
 
         Add-GitItem -Path 'file'
 
-        $commit = Save-GitChange -Message 'Creating initial commit.'
+        $commit = Save-GitCommit -Message 'Creating initial commit.'
 
     }
     finally

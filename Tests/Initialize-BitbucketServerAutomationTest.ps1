@@ -11,7 +11,7 @@
 # limitations under the License.
 
 & (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
-& (Join-Path -Path $PSScriptRoot -ChildPath '..\Carbon\Import-Carbon.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon') -Force
 
 if( (Get-Module -Name 'BBServerAutomationTest') )
 {

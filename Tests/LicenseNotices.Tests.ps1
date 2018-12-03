@@ -27,10 +27,13 @@ Describe 'License Notices' {
                         'LICENSE',
                         'NOTICE',
                         '*.md',
-                        'pester.xml'
+                        'pester.xml',
+                        'whiskey.yml'
                     )
     
-    [object[]]$filesMissingLicense = Get-ChildItem -Path $projectRoot -Exclude 'Carbon','Pester','LibGit2' |
+    $directoriesToExclude = @('.output', '.whiskey', 'PSModules')
+    
+    [object[]]$filesMissingLicense = Get-ChildItem -Path $projectRoot -Exclude $directoriesToExclude |
         Get-ChildItem -Recurse -File -Exclude $filesToSkip |
         Where-Object { $name = $_.Name; -not ($filesToSkip | Where-Object { $name -like $_ }) } |
         ForEach-Object {
