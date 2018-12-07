@@ -88,6 +88,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Get-BBServerPullRequestSetting',
         'Get-BBServerRepository', 
         'Get-BBServerTag',
+        'Get-BBServerUser',
         'Invoke-BBServerRestMethod',
         'Merge-BBServerPullRequest',
         'Move-BBServerRepository',
@@ -141,10 +142,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerHook` function to retrieve hooks from a repository.
-* Created `Enable-BBServerHook` function to enable a hook in a repository.
-* Created `Disable-BBServerHook` function to disable a hook in a repository.
-* Updated `Invoke-BBServerRestMethod` function to handle logic for paged API calls.
+* Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
+* Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
 '@
 
         } # End of PSData hashtable

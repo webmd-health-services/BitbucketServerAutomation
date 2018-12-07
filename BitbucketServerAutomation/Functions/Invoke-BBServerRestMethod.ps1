@@ -60,6 +60,10 @@ function Invoke-BBServerRestMethod
         [object]
         $InputObject,
         
+        [hashtable]
+        # Hashtable representing the request query parameters to include when calling the API resource.
+        $Parameter,
+
         [switch]
         $IsPaged
     )
@@ -68,6 +72,21 @@ function Invoke-BBServerRestMethod
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $uriPath = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
+
+    if ($Parameter)
+    {
+        $requestQueryParameter = ''
+        foreach ($key in $Parameter.Keys)
+        {
+            $requestQueryParameter += '&{0}={1}' -f $key, $Parameter[$key]
+        }
+
+        $requestQueryParameter = $requestQueryParameter.TrimStart('&')
+        $requestQueryParameter = [Uri]::EscapeUriString($requestQueryParameter)
+
+        $uriPath = '{0}?{1}' -f $uriPath, $requestQueryParameter
+    }
+
     $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPath
 
     $bodyParam = @{ }
@@ -98,7 +117,16 @@ function Invoke-BBServerRestMethod
             
             while( $isLastPage -eq $false )
             {
-                $uriPagedPath = ('{0}?limit={1}&start={2}' -f $uriPath, [int16]::MaxValue, $nextPageStart)
+                if ($uriPath -match '\?')
+                {
+                    $queryStringSeparator = '&'
+                }
+                else
+                {
+                    $queryStringSeparator = '?'
+                }
+
+                $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $uriPath, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
                 $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
                 
                 $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
