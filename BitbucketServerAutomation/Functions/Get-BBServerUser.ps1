@@ -38,7 +38,7 @@ function Get-BBServerUser
         $Connection,
 
         [string]
-        # Specifies a filter to only return users whose username, display name or email addresses contain the supplied filter string.
+        # Filter to use to find a specific user. This is passed to Bitbucket Server as-is. It searches a user's username, display name, and email address for the filter. If any field matches, that user is returned.
         $Filter
     )
 
