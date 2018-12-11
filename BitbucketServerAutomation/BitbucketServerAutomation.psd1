@@ -15,7 +15,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.8.0'
+    ModuleVersion = '0.9.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -88,6 +88,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Get-BBServerPullRequestSetting',
         'Get-BBServerRepository', 
         'Get-BBServerTag',
+        'Get-BBServerUser',
         'Invoke-BBServerRestMethod',
         'Merge-BBServerPullRequest',
         'Move-BBServerRepository',
@@ -141,10 +142,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerHook` function to retrieve hooks from a repository.
-* Created `Enable-BBServerHook` function to enable a hook in a repository.
-* Created `Disable-BBServerHook` function to disable a hook in a repository.
-* Updated `Invoke-BBServerRestMethod` function to handle logic for paged API calls.
+* Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
+* Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
 '@
 
         } # End of PSData hashtable
