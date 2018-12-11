@@ -78,12 +78,10 @@ function Invoke-BBServerRestMethod
         $requestQueryParameter = ''
         foreach ($key in $Parameter.Keys)
         {
-            $requestQueryParameter += '&{0}={1}' -f $key, $Parameter[$key]
+            $requestQueryParameter += '&{0}={1}' -f [uri]::EscapeDataString($key), [uri]::EscapeDataString($Parameter[$key])
         }
 
         $requestQueryParameter = $requestQueryParameter.TrimStart('&')
-        $requestQueryParameter = [Uri]::EscapeUriString($requestQueryParameter)
-
         $uriPath = '{0}?{1}' -f $uriPath, $requestQueryParameter
     }
 
