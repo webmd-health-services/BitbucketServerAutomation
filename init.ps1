@@ -21,145 +21,67 @@ The `init.ps1` script initializes this repository for development. It:
 # limitations under the License.
 [CmdletBinding()]
 param(
-    [string]
-    # Path to the root directory where Bitbucket Server is installed.
-    $BitbucketInstallRoot = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\Bitbucket'),
+    [Parameter(Mandatory, ParameterSetName='Docker')]
+    [switch]
+    # Run Bitbucket Server on the local machine as a Docker container.
+    $Docker,
+
+    [Parameter(Mandatory, ParameterSetName='Windows')]
+    [switch]
+    # Run Bitbucket Server on the local machine as a Windows service.
+    $Windows,
 
     [string]
-    # Path to the application data directory for Bitbucket Server.
-    $BitbucketApplicationDataPath = (Join-Path -Path $env:SystemDrive -ChildPath 'Atlassian\ApplicationData\Bitbucket'),
+    # Version of Bitbucket Server to run.
+    $Version = '5.2.3',
 
-    [Switch]
-    # Removes any previously downloaded packages and re-downloads them.
-    $Clean,
-
-    [string]
-    # Version of Bitbucket Server to install.
-    $Version = '5.2.3'
+    [pscredential]
+    # Credential object for the default Administrator account on the local Bitbucket Server instance. Defualts to username "admin" and password "admin".
+    $Credential
 )
 
-Set-StrictMode -Version 'Latest'
-#Requires -Version 4
+#Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-# Install a local copy of Bitbucket Server.
-$bitbucketInstallPath = Join-Path -Path $BitbucketInstallRoot -ChildPath $Version
-$installerPath = Join-Path -Path $env:TEMP -ChildPath ('atlassian-bitbucket-{0}-x64.exe' -f $Version)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 'Latest'
 
-if( $Clean -and (Test-Path -Path $installerPath -PathType Leaf) )
+$licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense'
+if( -not (Test-Path -Path $licensePath -PathType Leaf) )
 {
-    Remove-Item -Path $installerPath -Force
-}
-
-if( -not (Test-Path -Path $installerPath -PathType Leaf) )
-{
-    $downloadUri = 'https://www.atlassian.com/software/stash/downloads/binary/atlassian-bitbucket-{0}-x64.exe' -f $Version
-    $currentActivity = ('Downloading Bitbucket Server {0}' -f $Version)
-    Write-Progress -Activity $currentActivity
-    Write-Verbose -Message $currentActivity
-    Invoke-WebRequest -UseBasicParsing -Uri $downloadUri -OutFile $installerPath
-    Write-Progress -Completed -Activity $currentActivity
-}
-
-if( -not (Test-Path -Path $installerPath) )
-{
-    Write-Error -Message ('Bitbucket Server {0} installer failed to download.' -f $Version)
+    Write-Error -Message ('Bitbucket Server license file "{0}" does not exist. Atlassian has donated a license to the project for use in automated tests. If you are a trusted contributor to the project, please request a copy of this license from the project owners and maintainers. Otherwise, please request a trial/evaluation license from Atlassian.' -f $licensePath)
     return
 }
+$license = Get-Content -Path $licensePath | ForEach-Object { $_.TrimEnd('\') + '\' }
+$license = $license -join [Environment]::NewLine
+$license = $license.TrimEnd('\')
 
-if( -not (Get-Service -Name '*Bitbucket*') )
+if (-not $Credential)
 {
-    $installerResponseVarfilePath = Join-Path -Path $env:TEMP -ChildPath ('atlassian.bitbucket.server.response.{0}.varfile' -f [IO.Path]::GetRandomFileName())
-
-    @"
-# install4j response file for Bitbucket $($Version)
-app.bitbucketHome=$($BitbucketApplicationDataPath -replace '(:|\\)','\$1')
-app.defaultInstallDir=$($bitbucketInstallPath -replace '(:|\\)','\$1')
-app.install.service`$Boolean=true
-app.programGroupName=Bitbucket
-installation.is.new.install=true
-installation.type=INSTALL
-launch.application`$Boolean=false
-portChoice=default
-sys.adminRights`$Boolean=true
-sys.languageId=en
-"@ | Set-Content -Path $installerResponseVarfilePath
-
-    $currentActivity = 'Installing Bitbucket Server {0}' -f $Version
-    try
-    {
-        Write-Progress -Activity $currentActivity -Status 'Please wait. This could take several minutes.'
-        Write-Verbose -Message $currentActivity
-        Start-Process -Wait $installerPath -ArgumentList '-q','-varfile',$installerResponseVarfilePath
-    }
-    finally
-    {
-        Write-Progress -Activity $currentActivity -Completed
-        Remove-Item -Path $installerResponseVarfilePath
-    }
+    $Credential = New-Object -TypeName 'Management.Automation.PSCredential' -ArgumentList 'admin', (ConvertTo-SecureString 'admin' -AsPlainText -Force)
 }
-
-if( -not (Test-Path -Path $BitbucketApplicationDataPath -PathType Container) )
-{
-    Write-Error -Message ('It looks like Bitbucket Server wasn''t installed because ''{0}'' doesn''t exist.' -f $BitbucketApplicationDataPath)
-    return
-}
-
 $bbServerCredPath = Join-Path -Path $PSScriptRoot -ChildPath '.bbservercredential'
-if( (Test-Path -Path $bbServerCredPath -PathType Leaf) )
-{
-    $credential = Import-Clixml -Path $bbServerCredPath
-}
-else
-{
-    $rng = New-Object 'Security.Cryptography.RNGCryptoServiceProvider'
-    $randomBytes = New-Object 'byte[]' 12
-    $passwordChars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.ToCharArray()
-    $password = New-Object 'Security.SecureString'
-    $rng.GetBytes($randomBytes)
-    foreach( $byte in $randomBytes )
-    {
-        $password.AppendChar( $passwordChars[ $byte % $passwordChars.Count ] )
-    }
+$Credential | Export-Clixml -Path $bbServerCredPath
 
-    $credential = New-Object 'Management.Automation.PSCredential' 'admin',$password
-    $credential | Export-Clixml -Path $bbServerCredPath
+if ($Docker)
+{
+    $bitbucketInstallScript = (Join-Path -Path $PSScriptRoot -ChildPath 'Scripts\Install-BitbucketServerDocker.ps1' -Resolve)
+}
+elseif ($Windows)
+{
+    $bitbucketInstallScript = (Join-Path -Path $PSScriptRoot -ChildPath 'Scripts\Install-BitbucketServerWindows.ps1' -Resolve)
 }
 
-$bbPropertiesPath = Join-Path -Path $BitbucketApplicationDataPath -ChildPath 'shared\bitbucket.properties'
-$bbServerUri = 'http://{0}:7990/' -f $env:COMPUTERNAME.ToLowerInvariant()
-if( -not (Test-Path -Path $bbPropertiesPath -PathType Leaf) )
-{
-    $licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense'
-    if( -not (Test-Path -Path $licensePath -PathType Leaf) )
-    {
-        Write-Error -Message ('Bitbucket Server license file ''{0}'' does not exist. Atlassian has donated a license to the project for use in automated tests. If you are a trusted contributor to the project, please request a copy of this license from the project owners and maintainers. Otherwise, please request a trial/evaluation license from Atlassian.' -f $licensePath)
-        return
-    }
-
-    $license = Get-Content -Path $licensePath | ForEach-Object { $_.TrimEnd('\') + '\' }
-    $license = $license -join [Environment]::NewLine
-    $license = $license.TrimEnd('\')
-
-    @"
-setup.displayName=Bitbucket Server Automation
-setup.baseUrl= $($bbServerUri)
-setup.license= $($license)
-setup.sysadmin.username=$($credential.UserName)
-setup.sysadmin.password=$($credential.GetNetworkCredential().Password)
-setup.sysadmin.displayName=Administrator
-setup.sysadmin.emailAddress=nobody@example.com
-"@ | Set-Content -Path $bbPropertiesPath
-}
-
-Get-Service -Name '*Bitbucket*' | Start-Service
-Start-Sleep -Seconds 15
+& $bitbucketInstallScript -Credential $credential -License $license -Version $Version -Verbose:$VerbosePreference
 
 $currentActivity = 'Waiting for Bitbucket Server {0} to Start' -f $Version
 $status = 'Please wait. This could take several minutes'
 Write-Progress -Activity $currentActivity -Status $status
 Write-Verbose -Message $currentActivity
 
+Start-Sleep -Seconds 15
+
+$bbServerUri = 'http://localhost:7990/'
 $percentComplete = 1
 do
 {

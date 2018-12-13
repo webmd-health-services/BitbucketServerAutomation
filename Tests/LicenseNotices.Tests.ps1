@@ -96,6 +96,13 @@ Describe 'License Notices' {
                     $file.StartsWith( $expectedNotice )
                     break
                 }
+                ''
+                {
+                    $expectedNotice = $noticeLines -join ('{0}# ' -f ([Environment]::NewLine))
+                    $expectedNotice = '# {0}' -f $expectedNotice
+                    $file.StartsWith( $expectedNotice )
+                    break
+                }
                 default
                 {
                     Write-Verbose -Verbose $fileInfo.FullName
