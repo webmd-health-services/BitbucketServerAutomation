@@ -79,7 +79,7 @@ $status = 'Please wait. This could take several minutes'
 Write-Progress -Activity $currentActivity -Status $status
 Write-Verbose -Message $currentActivity
 
-Start-Sleep -Seconds 15
+Start-Sleep -Seconds 20
 
 $bbServerUri = 'http://localhost:7990/'
 $percentComplete = 1
