@@ -1,4 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/aub8slbmc95s4ikv?svg=true)](https://ci.appveyor.com/project/splatteredbits/bitbucketserverautomation)
+[![latest](https://img.shields.io/badge/dynamic/json.svg?label=latest&url=https%3A%2F%2Fapi.github.com%2Frepos%2Fwebmd-health-services%2FBitbucketServerAutomation%2Freleases%2Flatest&query=%24.name&colorB=brightgreen)](https://www.powershellgallery.com/packages/BitbucketServerAutomation)
 
 # Overview
 
@@ -75,9 +76,15 @@ Contributions are welcome and encouraged! First, [create your own copy of this r
 
 Next, [clone the repository to your local computer](https://help.github.com/articles/cloning-a-repository/).
 
-Finally, before you can write tests and code, you'll need to first install the module's pre-requisites with:
+Finally, before you can write tests and code, you'll need to first install the module's pre-requisites and get a local Bitbucket Server instance running with:
 
-    .\init.ps1
+#### Docker container
+
+    .\init.ps1 -Docker
+
+#### Windows service
+
+    .\init.ps1 -Windows
 
 This script will download and install Bitbucket Server on the local computer for tests to use. In order to install Bitbucket Server, you'll need to obtain a trial license from Atlassian and place that license in a `.bbserverlicense` file in the root of the repository.
 
@@ -96,6 +103,16 @@ Then invoke a single test script:
     Invoke-Pester -Path .\Tests\New-BBServerRepository.Tests.ps1
 
 Test scripts go in the `Tests` directory. New module functions go in the `BitbucketServerAutomation\Functions` directory.
+
+## Cleaning Up
+
+Remove the locally running instance of Bitbucket Server with:
+
+    .\Scripts\Uninstall-BitbucketServer.ps1
+
+Remove any build related files with:
+
+    .\build.ps1 -Clean
 
 # Thanks
 
