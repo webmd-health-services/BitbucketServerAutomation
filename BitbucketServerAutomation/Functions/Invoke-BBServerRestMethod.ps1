@@ -104,7 +104,10 @@ function Invoke-BBServerRestMethod
     $credential = '{0}:{1}' -f $credential.UserName,$credential.GetNetworkCredential().Password
 
     $authHeaderValue = 'Basic {0}' -f [Convert]::ToBase64String( [Text.Encoding]::UTF8.GetBytes($credential) )
-    $headers = @{ 'Authorization' = $authHeaderValue }
+    $headers = @{
+        'Authorization' = $authHeaderValue
+        'X-Atlassian-Token' = 'no-check'
+    }
 
     try
     {
