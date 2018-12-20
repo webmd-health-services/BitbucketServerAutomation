@@ -34,7 +34,7 @@ function New-BBServerTestConnection
     {
         throw ('The credential in ''{0}'' is not valid. Please delete this file, uninstall your local Bitbucket Server instance (with the Uninstall-BitbucketServer.ps1 PowerShell script in the root of the repository), and re-run init.ps1.')
     }
-    $conn = New-BBServerConnection -Credential $credential -Uri ('http://{0}:7990' -f $env:COMPUTERNAME.ToLowerInvariant())
+    $conn = New-BBServerConnection -Credential $credential -Uri 'http://127.0.0.1:7990'
 
     if( $ProjectKey -and $ProjectName )
     {

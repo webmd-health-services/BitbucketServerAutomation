@@ -81,7 +81,7 @@ Write-Verbose -Message $currentActivity
 
 Start-Sleep -Seconds 20
 
-$bbServerUri = 'http://localhost:7990/'
+$bbServerUri = 'http://127.0.0.1:7990/'
 $percentComplete = 1
 do
 {

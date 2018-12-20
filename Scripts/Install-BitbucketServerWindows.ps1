@@ -111,7 +111,7 @@ if( -not (Test-Path -Path $bbPropertiesPath -PathType Leaf) )
 {
     @"
 setup.displayName=Bitbucket Server Automation
-setup.baseUrl=http://localhost:7990/
+setup.baseUrl=http://127.0.0.1:7990/
 setup.license=$($License)
 setup.sysadmin.username=$($Credential.UserName)
 setup.sysadmin.password=$($Credential.GetNetworkCredential().Password)
