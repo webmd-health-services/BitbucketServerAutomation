@@ -33,7 +33,7 @@ function Invoke-BBServerRestMethod
                     url = 'MY_BUILD_URL';
                     description = 'MY_BUILD_DESCRIPTION';
                  }
-        
+
     #>
     [CmdletBinding()]
     param(
@@ -59,7 +59,7 @@ function Invoke-BBServerRestMethod
         [Parameter(ValueFromPipeline=$true)]
         [object]
         $InputObject,
-        
+
         [hashtable]
         # Hashtable representing the request query parameters to include when calling the API resource.
         $Parameter,
@@ -115,7 +115,7 @@ function Invoke-BBServerRestMethod
         {
             $nextPageStart = 0
             $isLastPage = $false
-            
+
             while( $isLastPage -eq $false )
             {
                 if ($uriPath -match '\?')
@@ -129,7 +129,7 @@ function Invoke-BBServerRestMethod
 
                 $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $uriPath, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
                 $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
-                
+
                 $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
                 if( $getStream.isLastPage -eq $false )
                 {
@@ -139,7 +139,7 @@ function Invoke-BBServerRestMethod
                 {
                     $isLastPage = $true
                 }
-                
+
                 $getStream | Select-Object -ExpandProperty 'values'
             }
         }
@@ -148,16 +148,31 @@ function Invoke-BBServerRestMethod
             Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
         }
     }
-    catch [Net.WebException]
+    catch
     {
-        [Net.WebException]$ex = $_.Exception
-        $response = $ex.Response
-        $content = ''
-        if( $response )
+        $responseContent = $null
+        $exceptionType = $_.Exception.GetType().FullName
+
+        if ($exceptionType -eq 'System.Net.WebException')
         {
-            $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
-            $content = $reader.ReadToEnd() | ConvertFrom-Json
-            $reader.Dispose()
+            $response = $_.Exception.Response
+            if( $response )
+            {
+                $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
+                $responseContent = $reader.ReadToEnd() | ConvertFrom-Json
+                $reader.Dispose()
+            }
+        }
+        elseif (($exceptionType -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -and $_.ErrorDetails)
+        {
+            try
+            {
+                $responseContent = $_.ErrorDetails | ConvertFrom-Json
+            }
+            catch
+            {
+                $responseContent = $_.ErrorDetails
+            }
         }
 
         for( $idx = 0; $idx -lt $errors.Count; ++$idx )
@@ -167,14 +182,14 @@ function Invoke-BBServerRestMethod
                 $Global:Error.RemoveAt(0)
             }
         }
-        
-        if( -not $content )
+
+        if( -not $responseContent )
         {
-            Write-Error -ErrorRecord $_
+            Write-Error -ErrorRecord $_ -ErrorAction $ErrorActionPreference
             return
         }
 
-        foreach( $item in $content.errors )
+        foreach( $item in $responseContent.errors )
         {
             $message = $item.message
             if( $item.context )
@@ -188,6 +203,5 @@ function Invoke-BBServerRestMethod
 
             Write-Error -Message $message -ErrorAction $ErrorActionPreference
         }
-        return
     }
 }
