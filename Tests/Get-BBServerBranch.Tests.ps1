@@ -10,13 +10,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $projectKey = 'GBBSBRANCH'
-$repoName = 'RepositoryWithBranches'
+$repo = $null
+$repoName = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerBranch Tests'
 
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
+function Init
+{
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    $repo | Initialize-TestRepository -Connection $bbConnection | Write-Debug
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
+
 $initBranches = ('master', 'develop', 'release', 'hotfix/HotfixBranch', 'feature/NewFeatureOne', 'feature/NewFeatureTwo')
 
 function GivenARepositoryWithBranches
@@ -24,29 +40,6 @@ function GivenARepositoryWithBranches
     [CmdletBinding()]
     param(
     )
-    
-    $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
-    if( !$getBranches )
-    {
-        $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
-            
-        Push-Location -Path $tempRepoRoot
-        try
-        {
-            git clone $repoClonePath $repoName 2>&1
-            cd $repoName
-            git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests' 2>&1
-            git push -u origin 2>&1
-        }
-        finally
-        {
-            Pop-Location
-            Remove-Item -Path $tempRepoRoot -Recurse -Force
-        }
-    }
 
     $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
     $initBranches | ForEach-Object {
@@ -123,21 +116,25 @@ function WhenGettingBranches
 }
 
 Describe 'Get-BBServerBranch.when returning all branches from the repository' {
+    Init
     GivenARepositoryWithBranches
     WhenGettingBranches -ShouldReturnAllBranches
 }
 
 Describe 'Get-BBServerBranch.when returning only the ''master'' branch' {
+    Init
     GivenARepositoryWithBranches
     WhenGettingBranches -WithBranchSearchFilter 'master' -ShouldReturnSpecificBranches ('master')
 }
 
 Describe 'Get-BBServerBranch.when returning branches that match the wildcard search ''feature*''' {
+    Init
     GivenARepositoryWithBranches
     WhenGettingBranches -WithBranchSearchFilter 'feature*' -ShouldReturnSpecificBranches ('feature/NewFeatureOne', 'feature/NewFeatureTwo')
 }
 
 Describe 'Get-BBServerBranch.when searching for a branch that does not exist' {
+    Init
     GivenARepositoryWithBranches
     WhenGettingBranches -WithBranchSearchFilter 'NonExistentBranch' -ShouldNotReturnAnyBranches
 }

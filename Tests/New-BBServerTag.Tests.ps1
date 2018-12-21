@@ -10,93 +10,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
-#Requires -Version 4
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-#setup
-Push-Location
-$conn = New-BBServerTestConnection
-$key,$repoName = New-TestProjectInfo
-$project = New-BBServerProject -Connection $conn -Key $key -Name $repoName -Description 'description'
-$repository = $null
-$global:commitNumber = 0
-$gitVersion = git --version 2>&1
-#$DebugPreference = 'Continue' 
-Write-Debug -Message ('git version = {0}' -f $gitVersion)
-Write-Debug -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
-Write-Verbose -Message ('git version = {0}' -f $gitVersion)
-Write-Verbose -Message ('env:USERPROFILE = {0}' -f $env:USERPROFILE)
-#create netrc file to maintain credentials for commit and push
-$netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'file' -Value @"
-machine $($env:COMPUTERNAME)
-login $($conn.Credential.UserName)
-password $($conn.Credential.GetNetworkCredential().Password)
-"@
-Write-Debug -Message ('Should place .netrc: {0}' -f $netrcFile)
-Write-Verbose -Message ('Should place .netrc: {0}' -f $netrcFile)
-<#
-    Don't forget that we've created a bunch of projects on BBServer that will likely need to be removed? Not sure about that 
-    though, as my local instance of BBserver probably doesn't have any effect on the outside world.
+$projectKey = 'NBBSTAG'
+$repo = $null
+$repoName = $null
+$repoRoot = $null
+$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerTag Tests'
 
-    To access BBserver, get the login info from the _netrc file in the env:home directory. The browse URL is contained in the repo.links
-#>
-
-function GivenARepository
+function Init
 {
-    Push-Location $TestDrive.FullName
-    try
-    {
-        $script:repoName = '{0}-{1}' -f ($PSCommandPath | Split-Path -Leaf),[IO.Path]::GetRandomFileName()
-        $script:repository = New-BBServerRepository -Connection $conn -Name $repoName -ProjectKey $key
-        $cloneRepo = $repository.links.clone | Where-Object { $_.name -eq 'http' }  | Select-Object -ExpandProperty 'href'
-        git init 2>&1 | Write-Debug
-        #clone, commit and push a new file to the new repo
-        git clone $cloneRepo 2>&1 | Write-Debug
-        git remote add origin $cloneRepo 2>&1 | Write-Debug
-        git pull origin master 2>&1 | Write-Debug
-        $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
-        git add $newFile 2>&1 | Write-Debug
-        git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) 2>&1 | Write-Debug
-    
-        #get the HEAD commit hash
-        $commitHash = git rev-parse HEAD 2>&1
-    
-        git push --set-upstream $cloneRepo master 2>&1 | Write-Debug 
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
 
-        return $commitHash
-    }
-    finally
-    {
-        Pop-Location
-    }
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
 }
 
 function GivenAValidCommit
 {
-    Push-Location $TestDrive.FullName
-    try
-    {
-        if( -not (git rev-parse HEAD 2>$null) )
-        {
-            GivenARepository | Write-Debug
-        }
-        
-        $newFile = New-Item -Name 'commitfile' -ItemType 'file' -Force -Value ('newFile {0}!!' -f $global:commitNumber) 
-        git add $newFile 2>&1 | Write-Debug
-        git commit -m ('adding file, commit no {0} for project-key: {1}' -f $global:commitNumber++, $key) 2>&1 | Write-Debug
-    
-        #get the HEAD commit hash
-        $commitHash = git rev-parse HEAD 2>&1
-    
-        git push origin master 2>&1 | Write-Debug 
+    $commit = New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
 
-        return $commitHash
-    }
-    finally
-    {
-        Pop-Location
-    }
+    return $commit.Sha
 }
 
 function WhenTaggingTheCommit
@@ -132,24 +72,15 @@ function WhenTaggingTheCommit
     {
         $optionalParams['Type'] = $Type
     }
-    $global:Error.Clear()
-    try
-    {
-        New-BBServerTag -Connection $conn -ProjectKey $key -RepositoryKey $repoName -name $TagName -CommitID $commitHash @optionalParams
-    }
-    catch
-    {
-        return $false
-    }
-    return $true
+
+    $Global:Error.Clear()
+
+    New-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName -name $TagName -CommitID $commitHash @optionalParams
 }
 
 function ThenTheCommitShouldBeTagged
 {
     param(
-        [bool]
-        $TagResult,
-
         [String]
         $TagName,
 
@@ -157,117 +88,117 @@ function ThenTheCommitShouldBeTagged
         $CommitHash
     )
 
-    Push-Location $TestDrive.FullName
-    try
-    {
-        it 'should not throw any errors' {
-            $Global:Error | Should BeNullOrEmpty
-        }
-        it 'should successfully tag the commit' {
-            $TagResult | Should be $true
-        }
-    
-        git fetch --all 2>&1 | Write-Debug
-        $tags = git tag --points-at $CommitHash 2>&1
+    $tag = Get-BBServerTag -ProjectKey $projectKey -RepositoryKey $repoName -Connection $bbConnection | Where-Object { $_.displayId -eq $TagName }
 
-        it ('should apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
-            $tags | Where-Object { $_ -match $TagName } | Should -Not -BeNullOrEmpty
-        }
-    }
-    finally
-    {
-        Pop-Location
+    it ('should apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
+        $tag | Should -Not -BeNullOrEmpty
+        $tag.latestCommit | Should -Be $CommitHash
     }
 }
 
-function ThenTheCommitShouldNotBeTagged
+function ThenTagShouldNotExist
 {
-        param(
-        [String]
-        $ErrorMessage,
-        
-        [String]
-        $CommitHash        
+    param(
+        [string]
+        $TagName
+    )
+
+    $tag = Get-BBServerTag -ProjectKey $projectKey -RepositoryKey $repoName -Connection $bbConnection | Where-Object { $_.displayId -eq $TagName }
+
+    it ('should not apply the {0} tag' -f $TagName) {
+        $tag | Should -BeNullOrEmpty
+    }
+}
+
+function ThenError
+{
+    param(
+        $ExpectedError
     )
 
     it 'should throw errors' {
-        $Global:Error[0] | Should match 'Unable to tag commit'
-        $Global:Error[1] | Should match $ErrorMessage
+        $Global:Error[0] | Should -Match 'Unable to tag commit'
+        $Global:Error[1] | Should -Match $ExpectedError
     }
- 
-    git fetch --all 2>&1 | Write-Debug
-    $tags = git tag --points-at $CommitHash 2>$null
- 
-    it ('should not apply the {0} tag to commit {1} in the remote repo' -f $TagName, $CommitHash) {
-        $tags | Should BeNullOrEmpty 
+}
+
+function ThenNoErrors
+{
+    It 'should not write any errors' {
+        $Global:Error | Should -BeNullOrEmpty
     }
-    
 }
 
 Describe 'New-BBServerTag.when tagging a new commit' {
+    Init
     $tagName = 'v1.4'
     $tagMessage = 'message'
     $commit = GivenAValidCommit
-    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
-    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $commit
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage
+    ThenTheCommitShouldBeTagged -TagName $tagName -CommitHash $commit
+    ThenNoErrors
 }
 
 Describe 'New-BBServerTag.when tagging an invalid commit' {
+    Init
     $tagName = 'v1.4'
     $tagMessage = 'message'
     $commit = 'notactuallyacommithash'
-    $error = ("'{0}' is an invalid tag point." -f $commit)
     WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -ErrorAction SilentlyContinue
-    ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $commit
+    ThenTagShouldNotExist $tagName
+    ThenError ("'{0}' is an invalid tag point." -f $commit)
 }
 
 Describe 'New-BBServerTag.when re-tagging a new commit that already has a tag' {
+    Init
     $tagMessage = 'message'
     $commit = GivenAValidCommit
     WhenTaggingTheCommit -CommitHash $commit -TagName 'v1.4' -Message $tagMessage
-    $result = WhenTaggingTheCommit -CommitHash $commit -TagName 'v1.5' -Message $tagMessage
-    ThenTheCommitShouldBeTagged -TagResult $result -TagName 'v1.5' -CommitHash $commit
+    WhenTaggingTheCommit -CommitHash $commit -TagName 'v1.5' -Message $tagMessage
+    ThenTheCommitShouldBeTagged -TagName 'v1.5' -CommitHash $commit
+    ThenNoErrors
 }
 
 Describe 'New-BBServerTag.when tagging two commits with the same tag' {
+    Init
     $tagMessage = 'message'
     $tagName = 'v1.4'
     $firstcommit = GivenAValidCommit
     $secondcommit = GivenAValidCommit
-    $error = ("Tag '{0}' already exists in repository" -f $tagName)
-    WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage 
+    WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
     WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage -ErrorAction SilentlyContinue
-    ThenTheCommitShouldNotBeTagged -ErrorMessage $error -CommitHash $secondcommit
+    ThenTheCommitShouldBeTagged -TagName $tagName -CommitHash $firstcommit
+    ThenError ("Tag '{0}' already exists in repository" -f $tagName)
 }
 
 Describe 'New-BBServerTag.when tagging two commits with the same tag and including the Force switch' {
+    Init
     $tagMessage = 'message'
     $tagName = 'v1.4'
     $firstcommit = GivenAValidCommit
     $secondcommit = GivenAValidCommit
-    $error = ("Tag '{0}' already exists in repository" -f $tagName)
     WhenTaggingTheCommit -CommitHash $firstcommit -TagName $tagName -Message $tagMessage
-    $result = WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage -Force
-    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $secondcommit
+    WhenTaggingTheCommit -CommitHash $secondcommit -TagName $tagName -Message $tagMessage -Force
+    ThenTheCommitShouldBeTagged -TagName $tagName -CommitHash $secondcommit
+    ThenNoErrors
 }
 
 Describe 'New-BBServerTag.when tagging a new commit with an Annotated Tag' {
+    Init
     $tagName = 'v1.4'
     $tagMessage = 'message'
     $commit = GivenAValidCommit
-    $result = WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'ANNOTATED' -Force
-    ThenTheCommitShouldBeTagged -TagResult $result -TagName $tagName -CommitHash $commit
+    WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'ANNOTATED' -Force
+    ThenTheCommitShouldBeTagged -TagName $tagName -CommitHash $commit
+    ThenNoErrors
 }
 
 Describe 'New-BBServerTag.when tagging a new commit with an Invalid Tag type' {
+    Init
     $tagName = 'v1.4'
     $tagMessage = 'message'
     $commit = GivenAValidCommit
-    $error = 'An error occurred while processing the request. Check the server logs for more information.'
     WhenTaggingTheCommit -CommitHash $commit -TagName $tagName -Message $tagMessage -Type 'INVALID' -ErrorAction SilentlyContinue
-    ThenTheCommitShouldNotBeTagged -TagName $tagName -CommitHash $commit -ErrorMessage $error
+    ThenTagShouldNotExist $tagName
+    ThenError 'An error occurred while processing the request. Check the server logs for more information.'
 }
-
-#teardown
-Pop-Location
-Remove-Item -Path $netrcFile -Force -Recurse

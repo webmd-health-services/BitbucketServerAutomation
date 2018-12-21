@@ -10,46 +10,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $projectKey = 'NBBSBRANCH'
-$repoName = 'RepositoryWithBranches'
+$repo = $null
+$repoRoot = $null
+$repoName = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerBranch Tests'
 
-$getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore
-if ( $getRepo )
+function Init
 {
-    Remove-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -Force
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
 }
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName | Out-Null
 
 function GivenARepository
 {
-    [CmdletBinding()]
     param(
+        $WithBranch
     )
-    
-    $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
-    if( !$getBranches )
+
+    New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
+
+    if ($WithBranch)
     {
-        $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
-            
-        Push-Location -Path $tempRepoRoot
-        try
-        {
-            git clone $repoClonePath $repoName 2>&1
-            cd $repoName
-            git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests' 2>&1
-            git push -u origin 2>&1
-        }
-        finally
-        {
-            Pop-Location
-            Remove-Item -Path $tempRepoRoot -Recurse -Force
-        }
+        New-GitBranch -Name $WithBranch -RepoRoot $repoRoot
+        Update-GitRepository -Revision $WithBranch -RepoRoot $repoRoot
+        Send-GitCommit -SetUpstream -RepoRoot $repoRoot -Credential $bbConnection.Credential
     }
 }
 
@@ -137,12 +133,14 @@ function ThenNewBranch
 }
 
 Describe 'New-BBServerBranch.when creating a new branch based on an existing ''master'' branch' {
+    Init
     GivenARepository
     WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' -StartPoint 'master'
     ThenNewBranch -ShouldBeCreated 'branch_cloned_from_master'
 }
 
 Describe 'New-BBServerBranch.when creating a new branch based on an existing Commit ID' {
+    Init
     GivenARepository
     $getBranch = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName 'master'
     $newBranchName = ('branch_cloned_from_commitid_{0}' -f $getBranch.latestCommit)
@@ -151,13 +149,15 @@ Describe 'New-BBServerBranch.when creating a new branch based on an existing Com
 }
 
 Describe 'New-BBServerBranch.when creating a branch from an invalid StartPoint' {
+    Init
     GivenARepository
     WhenCreatingANewBranch -BranchName 'branch_cloned_from_invalid_start' -StartPoint 'InvalidStartPoint' -ShouldThrowInvalidBranchPointException
     ThenNewBranch -ShouldNotBeCreated 'branch_cloned_from_invalid_start'
 }
 
 Describe 'New-BBServerBranch.when creating a branch with a name that already exists' {
-    GivenARepository
+    Init
+    GivenARepository -WithBranch 'branch_cloned_from_master'
     WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' -StartPoint 'master' -ShouldThrowDuplicateBranchException
     ThenNewBranch -ShouldNotBeCreatedAndOnlyExistOnce 'branch_cloned_from_master'
 }

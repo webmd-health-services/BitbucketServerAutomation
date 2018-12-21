@@ -13,11 +13,20 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $projectKey = 'GBBSHOOK'
-$repoName = 'RepositoryWithHook'
+$repo = $null
+$repoName = $null
 $hookKey = 'com.atlassian.bitbucket.server.bitbucket-bundled-hooks:force-push-hook'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerHook Tests'
 
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
+function Init
+{
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
 
 function GivenARepository
 {
@@ -88,6 +97,7 @@ function ThenShouldNotReturnHooks
 }
 
 Describe 'Get-BBServerHook.when returning all hooks from a repository' {
+    Init
     GivenARepository
     WhenGettingHooks
     ThenShouldNotThrowErrors
@@ -95,6 +105,7 @@ Describe 'Get-BBServerHook.when returning all hooks from a repository' {
 }
 
 Describe 'Get-BBServerHook.when searching for a specific hook from a repository' {
+    Init
     GivenARepository
     WhenGettingHooks -WithHookFilter $hookKey
     ThenShouldNotThrowErrors
@@ -102,6 +113,7 @@ Describe 'Get-BBServerHook.when searching for a specific hook from a repository'
 }
 
 Describe 'Get-BBServerHook.when searching for a hook that does not exist' {
+    Init
     GivenARepository
     WhenGettingHooks -WithHookFilter 'hook.that.does.not.exist'
     ThenShouldNotThrowErrors

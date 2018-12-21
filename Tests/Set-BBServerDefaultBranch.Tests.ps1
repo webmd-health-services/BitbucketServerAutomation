@@ -10,43 +10,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $projectKey = 'SBBSDEFBRANCH'
-$repoName = 'RepositoryWithBranches'
+$repo = $null
+$repoRoot = $null
+$repoName = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Set-BBServerDefaultBranch Tests'
-
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
 $initBranches = ('master', 'develop', 'release')
+
+function Init
+{
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
 
 function GivenARepositoryWithBranches
 {
-    [CmdletBinding()]
-    param(
-    )
-    
-    $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
-    if( !$getBranches )
-    {
-        $targetRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
-        $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
-            
-        Push-Location -Path $tempRepoRoot
-        try
-        {
-            git clone $repoClonePath $repoName 2>&1
-            cd $repoName
-            git commit --allow-empty -m 'Initializing repository for `Get-BBServerBranch` tests' 2>&1
-            git push -u origin 2>&1
-        }
-        finally
-        {
-            Pop-Location
-            Remove-Item -Path $tempRepoRoot -Recurse -Force
-        }
-    }
+    New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
 
     $getBranches = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName
     $initBranches | ForEach-Object {
@@ -75,7 +65,7 @@ function WhenSettingDefaultBranch
     if( $ThrowsExceptionThatBranchDoesNotExist )
     {
         It 'should throw an error that the invalid branch cannot be set as the default' {
-            $Global:Error | Should -Match ('A branch with the name ''{0}'' does not exist in the ''RepositoryWithBranches'' repository and cannot be set as the default' -f $BranchName, $repoName)
+            $Global:Error | Should -Match ('A branch with the name ''{0}'' does not exist in the ''{1}'' repository and cannot be set as the default' -f $BranchName, $repoName)
         }
     }
     else
@@ -102,18 +92,21 @@ function ThenDefaultBranchIs
 }
 
 Describe 'Set-BBServerDefaultBranch.when setting ''develop'' as the default branch' {
+    Init
     GivenARepositoryWithBranches
     WhenSettingDefaultBranch -BranchName 'develop'
     ThenDefaultBranchIs -BranchName 'develop'
 }
 
 Describe 'Set-BBServerDefaultBranch.when setting ''master'' back to the default branch' {
+    Init
     GivenARepositoryWithBranches
     WhenSettingDefaultBranch -BranchName 'master'
     ThenDefaultBranchIs -BranchName 'master'
 }
 
 Describe 'Set-BBServerDefaultBranch.when setting default branch to a non-existent branch' {
+    Init
     GivenARepositoryWithBranches
     WhenSettingDefaultBranch -BranchName 'NonExistentBranch' -ThrowsExceptionThatBranchDoesNotExist
 }

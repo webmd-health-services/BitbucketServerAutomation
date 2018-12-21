@@ -11,53 +11,52 @@
 # limitations under the License.
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $projectKey = 'GBBSCHANGE'
-$repoName = 'RepositoryWithChanges'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerChange Tests' 
+$repo = $null
+$repoRoot = $null
+$repoName = $null
 $commitHash = $null
+
+function Init
+{
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
+
 function GivenARepositoryWithBranches
 {
     [CmdletBinding()]
     param(
         $BranchName
     )
-    $repository = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName 
-    if($repository)
-    {
-        Remove-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName -Force
-    }
-    New-BBServerRepository -Connection $script:bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
-    $targetRepo = Get-BBServerRepository -Connection $script:bbConnection -ProjectKey $projectKey -Name $repoName
-    $repoClonePath = $targetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-    $tempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}' -f $RepoName)
-    New-Item -Path $tempRepoRoot -ItemType 'Directory' | Out-Null
-            
-    Push-Location -Path $tempRepoRoot
+
+    Push-Location -Path $repoRoot
     try
     {
-        git clone $repoClonePath $repoName 2>&1
-        Push-Location $repoName
-        try
-        {
-            git commit --allow-empty -m 'Initializing repository for `Get-BBServerChange` tests' 2>&1
-            git push -u origin 2>&1
-            git checkout -b $BranchName 2>&1
-            New-Item -Path 'test.txt' -ItemType 'File' -Force
-            git add .
-            git commit --allow-empty -m 'adding file to create a change' 2>&1
-            $script:commitHash = git rev-parse HEAD 2>$null
-            git push -u origin $BranchName 2>&1
-        }
-        finally
-        {
-            Pop-Location
-        }
+        New-Item -Path 'file' -ItemType File
+        Add-GitItem -Path 'file'
+        Save-GitCommit -Message 'Initializing repository for `Get-BBServerChange` tests'
+        Send-GitCommit -Credential $bbConnection.Credential
+
+        New-GitBranch -Name $BranchName
+        Update-GitRepository -Revision $BranchName
+
+        New-Item -Path 'test.txt' -ItemType 'File' -Force
+        Add-GitItem -Path 'test.txt'
+        $script:commitHash = Save-GitCommit -Message 'adding file to create a change' | Select-Object -ExpandProperty 'Sha'
+        Send-GitCommit -Credential $bbConnection.Credential
     }
     finally
     {
         Pop-Location
-        Remove-Item -Path $tempRepoRoot -Recurse -Force
     }
 }
 
@@ -124,6 +123,7 @@ function ThenItShouldThrowAnError
 }
 
 Describe 'Get-BBServerChange.when checking for changes on a branch that does not exist' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     WhenGettingChanges -From 'branchA' -To 'branchIDontExist' -ErrorAction SilentlyContinue
     ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
@@ -131,6 +131,7 @@ Describe 'Get-BBServerChange.when checking for changes on a branch that does not
 }
 
 Describe 'Get-BBServerChange.when checking for changes on two branches we should get changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From 'branchA' -To 'branchB'
@@ -138,6 +139,7 @@ Describe 'Get-BBServerChange.when checking for changes on two branches we should
 }
 
 Describe 'Get-BBServerChange.when checking for changes on a commit we should get changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From $script:commitHash -To 'branchB'
@@ -145,6 +147,7 @@ Describe 'Get-BBServerChange.when checking for changes on a commit we should get
 }
 
 Describe 'Get-BBServerChange.when checking for changes on a tag we should get changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     GivenANewTag -Name 'testTag'
@@ -153,6 +156,7 @@ Describe 'Get-BBServerChange.when checking for changes on a tag we should get ch
 }
 
 Describe 'Get-BBServerChange.when checking for changes on a tag with a name that needs encoding we should get changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     GivenANewTag -Name 'feature/test+tag.please&Encode'
@@ -161,6 +165,7 @@ Describe 'Get-BBServerChange.when checking for changes on a tag with a name that
 }
 
 Describe 'Get-BBServerChange.when checking for changes on a tag with a name that has invalid characters we should not get changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From 'feature/test+tag?please&Encode' -To 'branchB' -ErrorAction SilentlyContinue
@@ -169,6 +174,7 @@ Describe 'Get-BBServerChange.when checking for changes on a tag with a name that
 }
 
 Describe 'Get-BBServerChange.when checking for changes on two branches that are up to date we should get No changes' {
+    Init
     GivenARepositoryWithBranches -branchName 'branchA'
     GivenANewBranch -branchName 'branchB' -start 'master'
     WhenGettingChanges -From 'branchB' -To 'master'

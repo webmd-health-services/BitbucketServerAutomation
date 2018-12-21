@@ -24,7 +24,7 @@ param(
 )
 
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version Latest
 
 & (Join-Path -Path $PSScriptRoot -ChildPath '.whiskey\Import-Whiskey.ps1' -Resolve)
