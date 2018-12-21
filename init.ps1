@@ -90,7 +90,13 @@ do
     if( $result )
     {
         $status = $result.StatusCode
-        $title = $result.ParsedHtml.Title
+
+        $title = ''
+        if ($result.RawContent -match '<title>(.*)<\/title>')
+        {
+            $title = $Matches[1]
+        }
+
         Write-Verbose -Message ('GET {0} -> {1}  {2}' -F $bbServerUri,$status,$title)
         if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
         {
