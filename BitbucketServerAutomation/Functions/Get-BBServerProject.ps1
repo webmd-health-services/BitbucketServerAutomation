@@ -38,6 +38,7 @@ function Get-BBServerProject
     )
     
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $resourcePath = 'projects'
     if( $Name )

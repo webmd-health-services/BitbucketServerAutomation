@@ -57,6 +57,7 @@ function Get-BBServerRepository
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
     
     $resourcePath = 'projects/{0}/repos' -f $ProjectKey
     
