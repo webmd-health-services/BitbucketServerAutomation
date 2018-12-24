@@ -10,14 +10,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Requires -Version 4
+#Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
 $projectKey = 'GBBSFILE'
 $repo = $null
 $repoName = $null 
+$repoRoot = $null
 [string[]]$getFiles = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBServerFile Tests'
 
@@ -32,37 +34,20 @@ $initialFileList = (
                     'TestFolderA/TestFolderB/FileTest2.doc'
                    )
 
+function Init
+{
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection -NoInitialCommit
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
+
 function GivenARepositoryWithFiles
 {
-    [CmdletBinding()]
-    param(
-        [string[]]
-        $Path
-    )
-
-    $script:repoName = '{0}{1}' -f ($PSCommandPath | Split-Path -Leaf),[IO.Path]::GetRandomFileName()
-    New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
-    $script:repo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName
-
-    $repoClonePath = $repo.links.clone.href | Where-Object { $_ -match 'http' }
-    $tempRepoRoot = $TestDrive.FullName
-            
-    git clone $repoClonePath $tempRepoRoot 2>&1
-
-    Push-Location -Path $tempRepoRoot
-    try
-    {
-        $initialFileList | ForEach-Object {
-            New-Item -Path $_ -ItemType 'File' -Force
-        }
-        git add . 2>&1
-        git commit -m 'Staging test files for `Get-BBServerFile` tests' 2>&1
-        git push -u origin 2>&1
-    }
-    finally
-    {
-        Pop-Location
-    }
+    New-TestRepoCommit -RepoRoot $repoRoot -Filename $initialFileList -Connection $bbConnection
 }
 
 function WhenGettingFiles
@@ -116,6 +101,7 @@ function ThenItShouldReturn
 }
 
 Describe 'Get-BBServerFile.when returning all files' {
+    Init
     GivenARepositoryWithFiles @(
                                 'TestFileA.txt',
                                 'TestFileB.txt',
@@ -140,6 +126,7 @@ Describe 'Get-BBServerFile.when returning all files' {
 }
 
 Describe 'Get-BBServerFile.when returning files from the root named ''FileTest1.doc''' {
+    Init
     GivenARepositoryWithFiles @(
                                 'FileTest1.doc',
                                 'TestFolderA/FileTest1.doc'
@@ -149,6 +136,7 @@ Describe 'Get-BBServerFile.when returning files from the root named ''FileTest1.
 }
 
 Describe 'Get-BBServerFile.when using a search filter' {
+    Init
     GivenARepositoryWithFiles @(
                                     'TestFileA.txt',
                                     'TestFileB.txt',
@@ -164,6 +152,7 @@ Describe 'Get-BBServerFile.when using a search filter' {
 }
 
 Describe 'Get-BBServerFile.when searching a sub-directory' {
+    Init
     GivenARepositoryWithFiles @(
                                     'TestFileA.txt',
                                     'TestFileB.txt',
@@ -184,12 +173,14 @@ Describe 'Get-BBServerFile.when searching a sub-directory' {
 }
 
 Describe 'Get-BBServerFile.when searching for a file name that does not exist' {
+    Init
     GivenARepositoryWithFiles @( 'File1.txt' )
     WhenGettingFiles -WithSearchFilter 'NonExistentFile.txt'
     ThenItShouldReturn @( )
 }
 
 Describe 'Get-BBServerFile.when passed a file path that does not exist' {
+    Init
     GivenARepositoryWithFiles @( 'Fil1.txt' )
     WhenGettingFiles -WithPath 'NonExistentFolder'
     ThenItShouldReturn @( )

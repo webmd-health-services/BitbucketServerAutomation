@@ -17,7 +17,10 @@ $conn = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Get-BBS
 
 for( $idx = 0; $idx -lt 30; ++$idx )
 {
-    New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $idx -ErrorAction Ignore | Out-Null
+    if (-not (Get-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $idx))
+    {
+        New-BBServerRepository -Connection $conn -ProjectKey $projectKey -Name $idx | Write-Debug
+    }
 }
 
 Describe 'Get-BBServerRepository when getting all repositories for a project' {

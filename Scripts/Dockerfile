@@ -21,7 +21,7 @@ ARG USERNAME
 ARG PASSWORD
 
 RUN echo -e "setup.displayName=BitbucketServerAutomation Test Instance\n\
-             setup.baseUrl=http://localhost:7990/\n\
+             setup.baseUrl=http://127.0.0.1:7990/\n\
              setup.license=${LICENSE}\n\
              setup.sysadmin.username=${USERNAME}\n\
              setup.sysadmin.password=${PASSWORD}\n\

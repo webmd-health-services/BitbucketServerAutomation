@@ -49,6 +49,7 @@ function Move-BBServerRepository
     )
     
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $resourcePath = ('projects/{0}/repos/{1}' -f $ProjectKey, $RepoName)
     

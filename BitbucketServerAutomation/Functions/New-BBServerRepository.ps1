@@ -61,6 +61,7 @@ function New-BBServerRepository
     )
 
     Set-StrictMode -Version 'Latest'
+    Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $forkable = $true
     if( $NotForkable )

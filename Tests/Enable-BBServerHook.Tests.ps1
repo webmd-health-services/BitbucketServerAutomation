@@ -13,11 +13,19 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $projectKey = 'EBBSHOOK'
-$repoName = 'RepositoryWithHook'
+$repoName = $null
 $hookKey = 'com.atlassian.bitbucket.server.bitbucket-bundled-hooks:force-push-hook'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Enable-BBServerHook Tests'
 
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
+
+function Init
+{
+    $script:repoName = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
 
 function GivenARepository
 {
@@ -39,14 +47,15 @@ function GivenHookIsEnabled
 
 function WhenEnablingRepositoryHook
 {
+    [CmdletBinding()]
     param(
         [string]
         $WithHook
     )
 
     $Global:Error.Clear()
-    
-    Enable-BBServerHook -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -HookKey $WithHook -ErrorAction SilentlyContinue
+
+    Enable-BBServerHook -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -HookKey $WithHook
 }
 
 function ThenShouldNotThrowErrors
@@ -84,6 +93,7 @@ function ThenHookShouldBeEnabled
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook in a repository' {
+    Init
     GivenARepository
     WhenEnablingRepositoryHook $hookKey
     ThenShouldNotThrowErrors
@@ -91,6 +101,7 @@ Describe 'Enable-BBServerHook.when enabling a hook in a repository' {
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook that is already enabled' {
+    Init
     GivenARepository
     GivenHookIsEnabled $hookKey
     WhenEnablingRepositoryHook $hookKey
@@ -99,7 +110,8 @@ Describe 'Enable-BBServerHook.when enabling a hook that is already enabled' {
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook that does not exist' {
+    Init
     GivenARepository
-    WhenEnablingRepositoryHook 'not.a.valid.hook.key'
+    WhenEnablingRepositoryHook 'not.a.valid.hook.key' -ErrorAction SilentlyContinue
     ThenShouldThrowError 'An error occurred while processing the request'
 }

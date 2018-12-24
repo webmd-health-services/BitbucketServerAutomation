@@ -65,6 +65,7 @@ function Remove-BBServerRepository
     process 
     {
         Set-StrictMode -Version 'Latest'
+        Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
     
         if( $Name.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo' )
         {
