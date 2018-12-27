@@ -67,44 +67,45 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # TypesToProcess = @()
 
     # Format files (.ps1xml) to be loaded when importing this module
-    FormatsToProcess = @( 
+    FormatsToProcess = @(
         'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
-        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
+        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml'
     )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @(  
+    FunctionsToExport = @(
         'Find-BBServerRepository',
         'Disable-BBServerHook',
         'Enable-BBServerHook',
         'Get-BBServerBranch',
         'Get-BBServerChange',
         'Get-BBServerCommitBuildStatus',
+        'Get-BBServerDefaultReviewer',
         'Get-BBServerFile',
         'Get-BBServerHook',
         'Get-BBServerProject',
         'Get-BBServerPullRequest',
         'Get-BBServerPullRequestSetting',
-        'Get-BBServerRepository', 
+        'Get-BBServerRepository',
         'Get-BBServerTag',
         'Get-BBServerUser',
         'Invoke-BBServerRestMethod',
         'Merge-BBServerPullRequest',
         'Move-BBServerRepository',
         'New-BBServerBranch',
-        'New-BBServerConnection', 
+        'New-BBServerConnection',
         'New-BBServerProject',
         'New-BBServerPullRequest',
-        'New-BBServerRepository', 
+        'New-BBServerRepository',
         'New-BBServerTag',
         'Remove-BBServerRepository',
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
-        'Set-BBServerPullRequestSetting' 
+        'Set-BBServerPullRequestSetting'
     )
 
     # Cmdlets to export from this module
@@ -146,6 +147,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             ReleaseNotes = @'
 * Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
 * Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
+* Created `Get-BBServerDefaultReviewer` function for getting all default reviewer conditions for a project or repository.
 '@
 
         } # End of PSData hashtable

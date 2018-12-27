@@ -77,8 +77,8 @@ elseif ($Windows)
 & $bitbucketInstallScript -Credential $credential -License $license -Version $Version -Verbose:$VerbosePreference
 
 $currentActivity = 'Waiting for Bitbucket Server {0} to Start' -f $Version
-$status = 'Please wait. This could take several minutes'
-Write-Progress -Activity $currentActivity -Status $status
+$title = 'Please wait. This could take several minutes'
+Write-Progress -Activity $currentActivity -Status $title
 Write-Verbose -Message $currentActivity
 
 Start-Sleep -Seconds 20
@@ -87,7 +87,7 @@ $bbServerUri = 'http://127.0.0.1:7990/'
 $percentComplete = 1
 do
 {
-    Write-Progress -Activity $currentActivity -Status $status -PercentComplete ($percentComplete++)
+    Write-Progress -Activity $currentActivity -Status $title -PercentComplete ($percentComplete++)
     $result = Invoke-WebRequest -Uri $bbServerUri -Verbose:$false
     if( $result )
     {

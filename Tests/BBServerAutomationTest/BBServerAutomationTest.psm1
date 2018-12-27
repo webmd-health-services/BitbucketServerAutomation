@@ -87,6 +87,30 @@ function New-TestRepoCommit
     return $commit
 }
 
+function New-BBServerTestProject
+{
+    param(
+        [Parameter(Mandatory)]
+        [object]
+        $Connection,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Key,
+
+        [Parameter(Mandatory)]
+        [string]
+        $Name
+    )
+
+    $projectNotExists = $null -eq (Get-BBServerProject -Connection $Connection | Where-Object { $_.key -eq $Key })
+
+    if ($projectNotExists)
+    {
+        New-BBServerProject -Connection $Connection -Key $Key -Name $Name
+    }
+}
+
 function New-BBServerTestRepository
 {
     param(
@@ -130,12 +154,7 @@ function New-BBServerTestConnection
 
     if ($ProjectKey)
     {
-        $projectNotExists = $null -eq (Get-BBServerProject -Connection $conn | Where-Object { $_.key -eq $ProjectKey })
-
-        if ($projectNotExists)
-        {
-            New-BBServerProject -Connection $conn -Key $ProjectKey -Name $ProjectName | Write-Debug
-        }
+        New-BBServerTestProject -Connection $conn -Key $ProjectKey -Name $ProjectName | Write-Debug
     }
 
     return $conn
@@ -150,10 +169,37 @@ function Remove-BBServerTestRepository
 
         [Parameter(Mandatory=$true)]
         [string]
-        $ProjectKey
+        $ProjectKey,
+
+        [switch]
+        $Force
     )
 
-    Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection
+    Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection -Force:$Force
+}
+
+function Remove-BBServerTestProject
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Connection,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Key,
+
+        [switch]
+        $Force
+    )
+
+    Remove-BBServerTestRepository -Connection $Connection -ProjectKey $Key -Force:$Force
+
+    $projectExists = (Get-BBServerProject -Connection $Connection | Where-Object { $_.key -eq $Key })
+    if ($projectExists)
+    {
+        Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}' -f $Key)
+    }
 }
 
 function New-TestProjectInfo
