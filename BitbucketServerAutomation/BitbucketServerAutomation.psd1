@@ -97,6 +97,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Move-BBServerRepository',
         'New-BBServerBranch',
         'New-BBServerConnection',
+        'New-BBServerDefaultReviewer',
         'New-BBServerProject',
         'New-BBServerPullRequest',
         'New-BBServerRepository',
@@ -105,6 +106,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
+        'Set-BBServerDefaultReviewer',
         'Set-BBServerPullRequestSetting'
     )
 
