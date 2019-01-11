@@ -22,7 +22,7 @@ Describe 'License Notices' {
 
     $noticeLines = & {
 
-        'Copyright 2016 - {0} WebMD Health Services' -f (Get-Date).Year
+       'Copyright\ 20\d{2}(?:\ ?-\ ?20\d{2})?\ WebMD Health Services'
 
         Get-Content -Path $licenseFilePath -Tail 11 |
         ForEach-Object {

@@ -37,7 +37,10 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 '@
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '4.0'
+    PowerShellVersion = '5.1'
+
+    # Supported PSEditions
+    CompatiblePSEditions = @( 'Desktop', 'Core' )
 
     # Name of the Windows PowerShell host required by this module
     # PowerShellHostName = ''
@@ -97,6 +100,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Move-BBServerRepository',
         'New-BBServerBranch',
         'New-BBServerConnection',
+        'New-BBServerDefaultReviewer',
         'New-BBServerProject',
         'New-BBServerPullRequest',
         'New-BBServerRepository',
@@ -105,6 +109,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
+        'Set-BBServerDefaultReviewer',
         'Set-BBServerPullRequestSetting'
     )
 
