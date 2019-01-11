@@ -1,52 +1,61 @@
+# Copyright 2016 - 2018 WebMD Health Services
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $ProjectKey = 'GBBSPR'
-$RepoName = 'RepositoryWithBranches'
+$repo = $null
+$repoName = $null
+$repoRoot = $null
 $FromBranchName = 'branch-to-merge'
 $ToBranchName = 'destination-branch'
-$BBConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'Get-BBServerPullRequest Tests'
-$PullRequest = $null
+$bbConnection = New-BBServerTestConnection -ProjectKey $ProjectKey -ProjectName 'Get-BBServerPullRequest Tests'
+$pullRequest = $null
 $Start = 'master'
 $Title = 'Pull Request Title'
 $ReceivedPullRequest = $null
 
-function GivenARepository
-{   
-    $Script:PullRequest = $null
-    $GetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
+function Init
+{
+    $script:pullRequest = $null
+    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
+    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
+    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
 
-    if ( $GetRepo )
-    {
-        Remove-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName -Force
-    }
-    New-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName | Out-Null
-    
-    $GetBranches = Get-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName
-    if( !$GetBranches )
-    {
-        $TargetRepo = Get-BBServerRepository -Connection $BBConnection -ProjectKey $ProjectKey -Name $RepoName
-        $repoClonePath = $TargetRepo.links.clone.href | Where-Object { $_ -match 'http' }
-        $Script:TempRepoRoot = Join-Path -Path $TestDrive.FullName -ChildPath ('{0}+{1}' -f $RepoName, [IO.Path]::GetRandomFileName())
-        New-Item -Path $Script:TempRepoRoot -ItemType 'Directory' | Out-Null
-            
-        Push-Location -Path $Script:TempRepoRoot
-        git clone $repoClonePath $RepoName 2>&1
-        Set-Location $RepoName
-        git commit --allow-empty -m 'Initializing repository for `Get-BBServerPullRequest` tests' 2>&1
-        git push -u origin 2>&1
-    }
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
+
+function GivenARepository
+{
+    New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
+}
+
+function GivenBranch
+{
+    param(
+        $BranchName
+    )
+
+    New-GitBranch -Name $BranchName -RepoRoot $repoRoot
+    Update-GitRepository -Revision $BranchName -RepoRoot $repoRoot
+
+    New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
 }
 
 function GivenAPullRequest
@@ -55,21 +64,11 @@ function GivenAPullRequest
         [string]
         $FromBranchName
     )
-    try
-    {
-        git checkout -b $FromBranchName 2>&1
-        git commit --allow-empty -m 'test commit' 2>&1
-        git push -u origin HEAD 2>&1
-    }
-    finally
-    {
-        Pop-Location
-        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
-    }
-    New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 
-    $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To $ToBranchName -Title $Title
-    if($PullRequest) 
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
+
+    $PullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -From $FromBranchName -To $ToBranchName -Title $Title
+    if($PullRequest)
     {
         $Script:PullRequest = $PullRequest
     }
@@ -80,22 +79,12 @@ function GivenTwoPullRequests
         [string]
         $FromBranchName
     )
-    try
-    {
-        git checkout -b $FromBranchName 2>&1
-        git commit --allow-empty -m 'test commit' 2>&1
-        git push -u origin HEAD 2>&1
-    }
-    finally
-    {
-        Pop-Location
-        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
-    }
-    New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 
-    $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To $ToBranchName -Title $Title
-    $PullRequest = New-BBServerPullRequest -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -From $FromBranchName -To 'master' -Title $Title
-    if($PullRequest) 
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
+
+    $PullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -From $FromBranchName -To $ToBranchName -Title $Title
+    $PullRequest = New-BBServerPullRequest -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -From $FromBranchName -To 'master' -Title $Title
+    if($PullRequest)
     {
         $Script:PullRequest = $PullRequest
     }
@@ -106,29 +95,19 @@ function GivenNoPullRequests
         [string]
         $FromBranchName
     )
-    try
-    {
-        git checkout -b $FromBranchName 2>&1
-        git commit --allow-empty -m 'test commit' 2>&1
-        git push -u origin HEAD 2>&1
-    }
-    finally
-    {
-        Pop-Location
-        Remove-Item -Path $Script:TempRepoRoot -Recurse -Force
-    }
-    New-BBServerBranch -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
+
+    New-BBServerBranch -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -BranchName $ToBranchName -StartPoint $Script:Start -ErrorAction SilentlyContinue
 }
 
 function WhenGetPullRequestIsCalled
 {
     $Global:Error.clear()
-    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName
+    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName
 }
 function WhenGetPullRequestIsCalledWithId
 {
     $Global:Error.clear()
-    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $BBConnection -ProjectKey $ProjectKey -RepoName $RepoName -id $Script:PullRequest.id
+    $Script:ReceivedPullRequest = Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $ProjectKey -RepoName $repoName -id $Script:PullRequest.id
 }
 function ThenItShouldReturnAllPullRequests
 {
@@ -151,21 +130,27 @@ function ThenItShouldReturnZeroPullRequests
 }
 
 Describe 'Get-BBServerPullRequest.when returning all pull requests from the repository' {
+    Init
     GivenARepository
+    GivenBranch 'firstBranch'
     GivenTwoPullRequests -fromBranchName 'firstBranch'
     WhenGetPullRequestIsCalled
     ThenItShouldReturnAllPullRequests
 }
 
 Describe 'Get-BBServerPullRequest.when searching for a specific pullrequest' {
+    Init
     GivenARepository
+    GivenBranch 'branch-to-merge'
     GivenAPullRequest -fromBranchName 'branch-to-merge'
     WhenGetPullRequestIsCalledWithId
     ThenItShouldReturnAPullRequest
 }
 
 Describe 'Get-BBServerPullRequest.when no pull requests are present' {
+    Init
     GivenARepository
+    GivenBranch 'branch-to-merge'
     GivenNoPullRequests -fromBranchName 'branch-to-merge'
     WhenGetPullRequestIsCalled
     ThenItShouldReturnZeroPullRequests

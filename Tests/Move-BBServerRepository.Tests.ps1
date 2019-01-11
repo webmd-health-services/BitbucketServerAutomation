@@ -1,21 +1,35 @@
+# Copyright 2016 - 2018 WebMD Health Services
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Requires -Version 5.1
+Set-StrictMode -Version 'Latest'
+
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $sourceProjectKey = 'SMOVEBBSR'
 $targetProjectKey = 'TMOVEBBSR'
-$repoName = 'MoveRepo'
+$repoName = $null
 $bbConnection = New-BBServerTestConnection -ProjectKey $sourceProjectKey -ProjectName 'Move-BBServerRepository Tests - Source'
+
+function Init
+{
+    $script:repoName = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $sourceProjectKey | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $sourceProjectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
 
 function GivenASourceProject
 {
@@ -146,6 +160,7 @@ function ThenRepositoryShouldNotHaveMoved
 }
 
 Describe 'Move-BBServerRepository.when moving a repository between two projects' {
+    Init
     GivenASourceProject $sourceProjectKey -WithRepo $repoName
     GivenATargetProject $targetProjectKey -WithNoRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo $repoName
@@ -154,6 +169,7 @@ Describe 'Move-BBServerRepository.when moving a repository between two projects'
 }
 
 Describe 'Move-BBServerRepository.when repository with same name already exists in target project' {
+    Init
     GivenASourceProject $sourceProjectKey -WithRepo $repoName
     GivenATargetProject $targetProjectKey -WithRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo $repoName
@@ -162,12 +178,14 @@ Describe 'Move-BBServerRepository.when repository with same name already exists 
 }
 
 Describe 'Move-BBServerRepository.when specified source project does not exist' {
+    Init
     GivenATargetProject $targetProjectKey -WithRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey 'Non-existent Project' -TargetProjectKey $targetProjectKey -Repo $repoName
     ThenErrors -ShouldBeThrown 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot be moved.'
 }
 
 Describe 'Move-BBServerRepository.when specified target project does not exist' {
+    Init
     GivenASourceProject $sourceProjectKey -WithRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey 'Non-existent Project' -Repo $repoName
     ThenErrors -ShouldBeThrown 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot be moved.'
@@ -175,6 +193,7 @@ Describe 'Move-BBServerRepository.when specified target project does not exist' 
 }
 
 Describe 'Move-BBServerRepository.when specified repository does not exist' {
+    Init
     GivenASourceProject $sourceProjectKey -WithRepo $repoName
     GivenATargetProject $targetProjectKey -WithRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo 'Non-existent Repo'

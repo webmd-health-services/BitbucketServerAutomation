@@ -1,9 +1,11 @@
+# Copyright 2016 - 2018 WebMD Health Services
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,7 +35,7 @@ function Invoke-BBServerRestMethod
                     url = 'MY_BUILD_URL';
                     description = 'MY_BUILD_DESCRIPTION';
                  }
-        
+
     #>
     [CmdletBinding()]
     param(
@@ -59,7 +61,11 @@ function Invoke-BBServerRestMethod
         [Parameter(ValueFromPipeline=$true)]
         [object]
         $InputObject,
-        
+
+        [hashtable]
+        # Hashtable representing the request query parameters to include when calling the API resource.
+        $Parameter,
+
         [switch]
         $IsPaged
     )
@@ -68,6 +74,19 @@ function Invoke-BBServerRestMethod
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $uriPath = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
+
+    if ($Parameter)
+    {
+        $requestQueryParameter = ''
+        foreach ($key in $Parameter.Keys)
+        {
+            $requestQueryParameter += '&{0}={1}' -f [uri]::EscapeDataString($key), [uri]::EscapeDataString($Parameter[$key])
+        }
+
+        $requestQueryParameter = $requestQueryParameter.TrimStart('&')
+        $uriPath = '{0}?{1}' -f $uriPath, $requestQueryParameter
+    }
+
     $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPath
 
     $bodyParam = @{ }
@@ -87,7 +106,10 @@ function Invoke-BBServerRestMethod
     $credential = '{0}:{1}' -f $credential.UserName,$credential.GetNetworkCredential().Password
 
     $authHeaderValue = 'Basic {0}' -f [Convert]::ToBase64String( [Text.Encoding]::UTF8.GetBytes($credential) )
-    $headers = @{ 'Authorization' = $authHeaderValue }
+    $headers = @{
+        'Authorization' = $authHeaderValue
+        'X-Atlassian-Token' = 'no-check'
+    }
 
     try
     {
@@ -95,12 +117,21 @@ function Invoke-BBServerRestMethod
         {
             $nextPageStart = 0
             $isLastPage = $false
-            
+
             while( $isLastPage -eq $false )
             {
-                $uriPagedPath = ('{0}?limit={1}&start={2}' -f $uriPath, [int16]::MaxValue, $nextPageStart)
+                if ($uriPath -match '\?')
+                {
+                    $queryStringSeparator = '&'
+                }
+                else
+                {
+                    $queryStringSeparator = '?'
+                }
+
+                $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $uriPath, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
                 $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
-                
+
                 $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
                 if( $getStream.isLastPage -eq $false )
                 {
@@ -110,7 +141,7 @@ function Invoke-BBServerRestMethod
                 {
                     $isLastPage = $true
                 }
-                
+
                 $getStream | Select-Object -ExpandProperty 'values'
             }
         }
@@ -119,16 +150,31 @@ function Invoke-BBServerRestMethod
             Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
         }
     }
-    catch [Net.WebException]
+    catch
     {
-        [Net.WebException]$ex = $_.Exception
-        $response = $ex.Response
-        $content = ''
-        if( $response )
+        $responseContent = $null
+        $exceptionType = $_.Exception.GetType().FullName
+
+        if ($exceptionType -eq 'System.Net.WebException')
         {
-            $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
-            $content = $reader.ReadToEnd() | ConvertFrom-Json
-            $reader.Dispose()
+            $response = $_.Exception.Response
+            if( $response )
+            {
+                $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
+                $responseContent = $reader.ReadToEnd() | ConvertFrom-Json
+                $reader.Dispose()
+            }
+        }
+        elseif (($exceptionType -eq 'Microsoft.PowerShell.Commands.HttpResponseException') -and $_.ErrorDetails)
+        {
+            try
+            {
+                $responseContent = $_.ErrorDetails | ConvertFrom-Json
+            }
+            catch
+            {
+                $responseContent = $_.ErrorDetails
+            }
         }
 
         for( $idx = 0; $idx -lt $errors.Count; ++$idx )
@@ -138,14 +184,14 @@ function Invoke-BBServerRestMethod
                 $Global:Error.RemoveAt(0)
             }
         }
-        
-        if( -not $content )
+
+        if( -not $responseContent )
         {
-            Write-Error -ErrorRecord $_
+            Write-Error -ErrorRecord $_ -ErrorAction $ErrorActionPreference
             return
         }
 
-        foreach( $item in $content.errors )
+        foreach( $item in $responseContent.errors )
         {
             $message = $item.message
             if( $item.context )
@@ -159,6 +205,5 @@ function Invoke-BBServerRestMethod
 
             Write-Error -Message $message -ErrorAction $ErrorActionPreference
         }
-        return
     }
 }

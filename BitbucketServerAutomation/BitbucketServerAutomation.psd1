@@ -1,9 +1,11 @@
+# Copyright 2016 - 2018 WebMD Health Services
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +17,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.8.0'
+    ModuleVersion = '0.9.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -35,7 +37,10 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 '@
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '4.0'
+    PowerShellVersion = '5.1'
+
+    # Supported PSEditions
+    CompatiblePSEditions = @( 'Desktop', 'Core' )
 
     # Name of the Windows PowerShell host required by this module
     # PowerShellHostName = ''
@@ -65,43 +70,47 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     # TypesToProcess = @()
 
     # Format files (.ps1xml) to be loaded when importing this module
-    FormatsToProcess = @( 
+    FormatsToProcess = @(
         'Formats\Atlassian.Bitbucket.Server.ProjectInfo.ps1xml',
-        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml' 
+        'Formats\Atlassian.Bitbucket.Server.RepositoryInfo.ps1xml'
     )
 
     # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @(  
+    FunctionsToExport = @(
         'Find-BBServerRepository',
         'Disable-BBServerHook',
         'Enable-BBServerHook',
         'Get-BBServerBranch',
         'Get-BBServerChange',
         'Get-BBServerCommitBuildStatus',
+        'Get-BBServerDefaultReviewer',
         'Get-BBServerFile',
         'Get-BBServerHook',
         'Get-BBServerProject',
         'Get-BBServerPullRequest',
         'Get-BBServerPullRequestSetting',
-        'Get-BBServerRepository', 
+        'Get-BBServerRepository',
         'Get-BBServerTag',
+        'Get-BBServerUser',
         'Invoke-BBServerRestMethod',
         'Merge-BBServerPullRequest',
         'Move-BBServerRepository',
         'New-BBServerBranch',
-        'New-BBServerConnection', 
+        'New-BBServerConnection',
+        'New-BBServerDefaultReviewer',
         'New-BBServerProject',
         'New-BBServerPullRequest',
-        'New-BBServerRepository', 
+        'New-BBServerRepository',
         'New-BBServerTag',
         'Remove-BBServerRepository',
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
-        'Set-BBServerPullRequestSetting' 
+        'Set-BBServerDefaultReviewer',
+        'Set-BBServerPullRequestSetting'
     )
 
     # Cmdlets to export from this module
@@ -141,10 +150,11 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerHook` function to retrieve hooks from a repository.
-* Created `Enable-BBServerHook` function to enable a hook in a repository.
-* Created `Disable-BBServerHook` function to disable a hook in a repository.
-* Updated `Invoke-BBServerRestMethod` function to handle logic for paged API calls.
+* Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
+* Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
+* Created `Get-BBServerDefaultReviewer` function for getting all default reviewer conditions for a project or repository.
+* Created `New-BBServerDefaultReviewer` function for creating a new default reviewer pull request condition for a project or repository.
+* Created `Set-BBServerDefaultReviewer` function for updating an existing default reviewer pull request condition for a project or repository.
 '@
 
         } # End of PSData hashtable

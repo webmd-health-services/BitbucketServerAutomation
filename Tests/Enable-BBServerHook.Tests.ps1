@@ -1,9 +1,11 @@
+# Copyright 2016 - 2018 WebMD Health Services
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,11 +15,19 @@
 & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
 $projectKey = 'EBBSHOOK'
-$repoName = 'RepositoryWithHook'
+$repoName = $null
 $hookKey = 'com.atlassian.bitbucket.server.bitbucket-bundled-hooks:force-push-hook'
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Enable-BBServerHook Tests'
 
-New-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Name $repoName -ErrorAction Ignore | Out-Null
+
+function Init
+{
+    $script:repoName = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey | Select-Object -ExpandProperty 'name'
+
+    # $DebugPreference = 'Continue'
+    Write-Debug -Message ('Project: {0}' -f $projectKey)
+    Write-Debug -message ('Repository: {0}' -f $repoName)
+}
 
 function GivenARepository
 {
@@ -39,14 +49,15 @@ function GivenHookIsEnabled
 
 function WhenEnablingRepositoryHook
 {
+    [CmdletBinding()]
     param(
         [string]
         $WithHook
     )
 
     $Global:Error.Clear()
-    
-    Enable-BBServerHook -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -HookKey $WithHook -ErrorAction SilentlyContinue
+
+    Enable-BBServerHook -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -HookKey $WithHook
 }
 
 function ThenShouldNotThrowErrors
@@ -84,6 +95,7 @@ function ThenHookShouldBeEnabled
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook in a repository' {
+    Init
     GivenARepository
     WhenEnablingRepositoryHook $hookKey
     ThenShouldNotThrowErrors
@@ -91,6 +103,7 @@ Describe 'Enable-BBServerHook.when enabling a hook in a repository' {
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook that is already enabled' {
+    Init
     GivenARepository
     GivenHookIsEnabled $hookKey
     WhenEnablingRepositoryHook $hookKey
@@ -99,7 +112,8 @@ Describe 'Enable-BBServerHook.when enabling a hook that is already enabled' {
 }
 
 Describe 'Enable-BBServerHook.when enabling a hook that does not exist' {
+    Init
     GivenARepository
-    WhenEnablingRepositoryHook 'not.a.valid.hook.key'
+    WhenEnablingRepositoryHook 'not.a.valid.hook.key' -ErrorAction SilentlyContinue
     ThenShouldThrowError 'An error occurred while processing the request'
 }
