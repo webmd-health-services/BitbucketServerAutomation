@@ -153,6 +153,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 * Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
 * Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
 * Created `Get-BBServerDefaultReviewer` function for getting all default reviewer conditions for a project or repository.
+* Created `New-BBServerDefaultReviewer` function for creating a new default reviewer pull request condition for a project or repository.
+* Created `Set-BBServerDefaultReviewer` function for updating an existing default reviewer pull request condition for a project or repository.
 '@
 
         } # End of PSData hashtable
