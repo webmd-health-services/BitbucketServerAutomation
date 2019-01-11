@@ -360,7 +360,7 @@ function WhenSettingDefaultReviewer
         $optionalParams['User'] = $User
     }
 
-    if ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('ApprovalCount'))
+    if ($PSBoundParameters.ContainsKey('ApprovalCount'))
     {
         $optionalParams['ApprovalCount'] = $ApprovalCount
     }
@@ -445,7 +445,7 @@ Describe 'Set-BBServerDefaultReviewer.when given user names instead of user obje
                                -ErrorAction SilentlyContinue
 
     ThenNoOutput
-    ThenErrorMatches 'does not have the expected properties\. Use "Get-BBServerUser"'
+    ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
 }
 
 Describe 'Set-BBServerDefaultReviewer.when approval count is greater than count of existing users' {

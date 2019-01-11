@@ -362,7 +362,7 @@ Describe 'New-BBServerDefaultReviewer.when given user names instead of user obje
 
     ThenDefaultReviewerConditionCount -ForProject -Is 0
     ThenNoOutput
-    ThenErrorMatches 'does not have the expected properties\. Use "Get-BBServerUser"'
+    ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
 }
 
 Describe 'New-BBServerDefaultReviewer.when given approval count is greater than number of given users' {

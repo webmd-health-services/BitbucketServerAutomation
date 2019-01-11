@@ -107,18 +107,20 @@ function New-BBServerDefaultReviewer
     $userCount = $User | Measure-Object | Select-Object -ExpandProperty 'Count'
     if ($ApprovalCount -gt $userCount)
     {
-        Write-Error -Message ('"ApprovalCount" ({0}) must be less than or equal to the number of "User" objects ({1}).' -f $ApprovalCount, $userCount) -ErrorAction $ErrorActionPreference
+        Write-Error -Message ('"ApprovalCount" ({0}) must be less than or equal to the number of users passed to the "User" parameter ({1}).' -f $ApprovalCount, $userCount) -ErrorAction $ErrorActionPreference
         return
     }
 
+    $idx = -1
     $userProperties = @('name', 'emailAddress', 'id', 'displayName', 'active', 'slug', 'type')
     foreach ($userObj in $User)
     {
+        $idx++
         foreach ($property in $userProperties)
         {
             if (-not ($userObj | Get-Member -Name $property))
             {
-                Write-Error -Message '"User" parameter''s argument does not have the expected properties. Use "Get-BBServerUser" to get user objects to pass to this cmdlet.' -ErrorAction $ErrorActionPreference
+                Write-Error -Message ('User[{0}] doesn''t have a "{1}" property. Make sure you''re using the "Get-BBServerUser" function to get users.' -f $idx, $property) -ErrorAction $ErrorActionPreference
                 return
             }
         }
@@ -131,11 +133,12 @@ function New-BBServerDefaultReviewer
         requiredApprovals = $ApprovalCount
     }
 
-    $resourcePath = 'projects/{0}/condition' -f $ProjectKey
+    $resourcePath = 'projects/{0}' -f $ProjectKey
     if ($RepositoryName)
     {
-        $resourcePath = 'projects/{0}/repos/{1}/condition' -f $ProjectKey, $RepositoryName
+        $resourcePath = '{0}/repos/{1}' -f $resourcePath,$RepositoryName
     }
+    $resourcePath = '{0}/condition' -f $resourcePath
 
     $requestBody | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'default-reviewers' -ResourcePath $resourcePath
 }

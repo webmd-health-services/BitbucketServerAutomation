@@ -107,14 +107,16 @@ function Set-BBServerDefaultReviewer
         return
     }
 
+    $idx = -1
     $userProperties = @('name', 'emailAddress', 'id', 'displayName', 'active', 'slug', 'type')
     foreach ($userObj in $User)
     {
+        $idx++
         foreach ($property in $userProperties)
         {
             if (-not ($userObj | Get-Member -Name $property))
             {
-                Write-Error -Message '"User" parameter''s argument does not have the expected properties. Use "Get-BBServerUser" to get user objects to pass to this cmdlet.' -ErrorAction $ErrorActionPreference
+                Write-Error -Message ('User[{0}] doesn''t have a "{1}" property. Make sure you''re using the "Get-BBServerUser" function to get users.' -f $idx, $property) -ErrorAction $ErrorActionPreference
                 return
             }
         }
@@ -124,7 +126,7 @@ function Set-BBServerDefaultReviewer
     $repositoryParam = @{ }
     if ($RepositoryName)
     {
-        $notFoundErrorMessageSuffix = 'repository "{0}" in project "{1}"' -f $RepositoryName, $ProjectKey
+        $notFoundErrorMessageSuffix = 'repository "{0}" in {1}' -f $RepositoryName, $notFoundErrorMessageSuffix
         $repositoryParam['RepositoryName'] = $RepositoryName
     }
 
@@ -146,17 +148,19 @@ function Set-BBServerDefaultReviewer
         requiredApprovals = $existingCondition.requiredApprovals
     }
 
-    if ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey('ApprovalCount'))
+    if ($PSBoundParameters.ContainsKey('ApprovalCount'))
     {
         $userCount = $requestBody.reviewers | Measure-Object | Select-Object -ExpandProperty 'Count'
+        $tooManyUsersErrorSuffix = 'configured for the condition ({0})' -f $userCount
         if ($User)
         {
             $userCount = $User | Measure-Object | Select-Object -ExpandProperty 'Count'
+            $tooManyUsersErrorSuffix = 'passed to the "User" parameter ({0})' -f $userCount
         }
 
         if ($ApprovalCount -gt $userCount)
         {
-            Write-Error -Message ('"ApprovalCount" ({0}) must be less than or equal to the number of "User" objects ({1}).' -f $ApprovalCount, $userCount) -ErrorAction $ErrorActionPreference
+            Write-Error -Message ('"ApprovalCount" ({0}) must be less than or equal to the number of users {1}.' -f $ApprovalCount, $tooManyUsersErrorSuffix) -ErrorAction $ErrorActionPreference
             return
         }
 
@@ -190,11 +194,12 @@ function Set-BBServerDefaultReviewer
         $requestBody.reviewers = @($User | Select-Object -Property $userProperties)
     }
 
-    $resourcePath = 'projects/{0}/condition/{1}' -f $ProjectKey, $ID
+    $resourcePath = 'projects/{0}' -f $ProjectKey
     if ($RepositoryName)
     {
-        $resourcePath = 'projects/{0}/repos/{1}/condition/{2}' -f $ProjectKey, $RepositoryName, $ID
+        $resourcePath = '{0}/repos/{1}' -f $resourcePath,$RepositoryName
     }
+    $resourcePath = '{0}/condition/{1}' -f $resourcePath, $ID
 
     $requestBody | Invoke-BBServerRestMethod -Connection $Connection -Method Put -ApiName 'default-reviewers' -ResourcePath $resourcePath
 }
