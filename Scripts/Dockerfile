@@ -16,21 +16,16 @@
 # come before any FROM directive in this file
 ARG VERSION
 
-FROM busybox:1.29 AS create-properties-file
+FROM atlassian/bitbucket-server:${VERSION}
 
 ARG LICENSE
 ARG USERNAME
 ARG PASSWORD
 
-RUN echo -e "setup.displayName=BitbucketServerAutomation Test Instance\n\
-             setup.baseUrl=http://127.0.0.1:7990/\n\
-             setup.license=${LICENSE}\n\
-             setup.sysadmin.username=${USERNAME}\n\
-             setup.sysadmin.password=${PASSWORD}\n\
-             setup.sysadmin.displayName=Administrator\n\
-             setup.sysadmin.emailAddress=admin@example.com\n\
-             feature.auth.captcha=false" \
-             > /bitbucket.properties
-
-FROM atlassian/bitbucket-server:${VERSION}
-COPY --from=create-properties-file /bitbucket.properties $BITBUCKET_HOME/bitbucket.properties
+ENV SETUP_DISPLAYNAME="BitbucketServerAutomation Test Instance"
+ENV SETUP_BASEURL="http://127.0.0.1:7990/"
+ENV SETUP_LICENSE="${LICENSE}"
+ENV SETUP_SYSADMIN_USERNAME="${USERNAME}"
+ENV SETUP_SYSADMIN_PASSWORD="${PASSWORD}"
+ENV SETUP_SYSADMIN_DISPLAYNAME="Administrator"
+ENV SETUP_SYSADMIN_EMAILADDRESS="admin@example.com"
