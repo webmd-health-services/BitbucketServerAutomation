@@ -35,7 +35,7 @@ param(
 
     [string]
     # Version of Bitbucket Server to run.
-    $Version = '5.16.0',
+    $Version = '6.9.0',
 
     [pscredential]
     # Credential object for the default Administrator account on the local Bitbucket Server instance. Defualts to username "admin" and password "admin".
