@@ -106,6 +106,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'New-BBServerRepository',
         'New-BBServerTag',
         'Remove-BBServerRepository',
+        'Remove-BBServerTag',
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
