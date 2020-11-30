@@ -22,6 +22,7 @@ $projectKey = 'GBBSTAG'
 $repo = $null
 $repoName = $null
 $repoRoot = $null
+$script:failed = $false
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Remove-BBServerTag Tests' 
 
 function Init
@@ -61,7 +62,14 @@ function WhenRemovingTags
     param(
         [String]$Tag
     )
-    return Remove-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName -TagName $Tag
+    try 
+    {
+        Remove-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName -TagName $Tag -ErrorAction Stop
+    }
+    catch
+    {
+        $script:failed = $true
+    }
 }
 
 function ThenTagsShouldNotBeObtained
@@ -78,7 +86,7 @@ function ThenTagsShouldNotBeObtained
 function ThenShouldFail
 {
     It('Should fail') {
-        $Global:Error | Should -Not -BeNullOrEmpty
+        $failed | Should -BeTrue
     }
 }
 
