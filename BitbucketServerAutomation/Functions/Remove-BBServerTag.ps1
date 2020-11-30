@@ -16,10 +16,10 @@ function Remove-BBServerTag
 {
     <#
     .SYNOPSIS
-    Removes a tag from a repository in Bitbucket Server.
+    Removes specified tags from a repository in Bitbucket Server.
 
     .DESCRIPTION
-    The `Remove-BBServerTag` function removes a git tag associated with a particular repository in Bitbucket Server. If the requested tag does not exist on the server, an error is thrown.
+    The `Remove-BBServerTag` function takes an array of git tags and removes them from the specified Bitbucket Server repository. If any of the requested tags do not exist on the server, an error is thrown.
 
     .EXAMPLE
     Remove-BBServerTag -Connection $conn -ProjectKey $key -RepositoryKey $repoName -TagName $tag.displayId
@@ -28,30 +28,29 @@ function Remove-BBServerTag
     #>
     param(
         [Parameter(Mandatory=$true)]
-        [object]
         # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        $Connection,    
+        [object]$Connection,    
   
         [Parameter(Mandatory=$true)]
-        [String]
         # The key of the repository's project.
-        $ProjectKey,
+        [String]$ProjectKey,
  
         [Parameter(Mandatory=$true)]
-        [String]
         # The key of the repository.
-        $RepositoryKey,
+        [String]$RepositoryKey,
 
         [Parameter(Mandatory=$true)]
-        [String]
         # The name of the tag to be deleted.
-        $TagName
+        [String[]]$TagName
     )
   
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
 
-    Invoke-BBServerRestMethod -Connection $Connection -Method DELETE -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags/{2}' -f $ProjectKey, $RepositoryKey, $TagName) 
+    foreach( $tag in $TagName )
+    {
+        Invoke-BBServerRestMethod -Connection $Connection -Method DELETE -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags/{2}' -f $ProjectKey, $RepositoryKey, $tag) 
+    }
 }
 
  
