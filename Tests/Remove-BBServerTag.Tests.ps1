@@ -38,30 +38,25 @@ function Init
 function GivenARepositoryWithTaggedCommits
 {
     param(
-        [Int]$WithNumberOfTags,
-
-        [String]$WithTagNamed
+        [Parameter(Mandatory=$true)]
+        [String[]]$WithTagNamed
     )
 
     New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
 
-    if( $WithTagNamed )
+    foreach( $tag in $WithTagNamed )
     {
         $commit = New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
-        New-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -Name $WithTagNamed -CommitID $commit.Sha -RepositoryKey $repoName
+        New-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -Name $tag -CommitID $commit.Sha -RepositoryKey $repoName
     }
-}
-
-function WhenGettingTags
-{
-    return Get-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName
 }
 
 function WhenRemovingTags
 {
     param(
-        [String]$Tag
+        [String[]]$Tag
     )
+
     try 
     {
         Remove-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName -TagName $Tag -ErrorAction Stop
@@ -72,14 +67,19 @@ function WhenRemovingTags
     }
 }
 
-function ThenTagsShouldNotBeObtained
+function ThenRepositoryTags
 {
     param(
-        [Object]$WithTags
+        [String[]]$Tag
     )
 
-    It ('should not have any tags') {
-        $WithTags | should -BeNullOrEmpty
+    $tags = Get-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName
+    $tags = $tags | Select-Object -ExpandProperty 'displayId'
+    foreach ( $serverTag in $Tag )
+    {
+        It ('should have the tag {0}' -f $serverTag) {
+            $serverTag | should -BeIn $tags
+        }
     }
 }
 
@@ -92,18 +92,14 @@ function ThenShouldFail
 
 Describe 'Remove-BBServerTag when removing a tag that exists' {
     Init
-    $tagName ="thisIsATag"
-    GivenARepositoryWithTaggedCommits -WithTagNamed $tagName
-    WhenRemovingTags -Tag $tagName
-    $tags = WhenGettingTags
-    ThenTagsShouldNotBeObtained -WithTags $tags
+    GivenARepositoryWithTaggedCommits -WithTagNamed 'one', 'two', 'three'
+    WhenRemovingTags -Tag 'one', 'three'
+    ThenRepositoryTags -Tag 'two'
 }
 
 Describe 'Remove-BBServerTag when removing a tag that does not exist' {
     Init
-    $notTagName = "doesNotExist"
-    GivenARepositoryWithTaggedCommits
-    WhenRemovingTags -Tag $notTagName
-    WhenGettingTags
+    GivenARepositoryWithTaggedCommits -WithTagNamed 'exists'
+    WhenRemovingTags -Tag 'doesNotExist'
     ThenShouldFail
 }
