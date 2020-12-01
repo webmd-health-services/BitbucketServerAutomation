@@ -17,7 +17,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.9.0'
+    ModuleVersion = '0.10.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -106,6 +106,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'New-BBServerRepository',
         'New-BBServerTag',
         'Remove-BBServerRepository',
+        'Remove-BBServerTag',
         'Rename-BBServerRepository',
         'Set-BBServerCommitBuildStatus',
         'Set-BBServerDefaultBranch',
