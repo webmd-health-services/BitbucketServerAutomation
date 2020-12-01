@@ -22,7 +22,7 @@ $projectKey = 'GBBSTAG'
 $repo = $null
 $repoName = $null
 $repoRoot = $null
-$script:failed = $false
+$failed = $false
 $bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'Remove-BBServerTag Tests' 
 
 function Init
@@ -30,6 +30,7 @@ function Init
     $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
     $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
     $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+    $script:failed = $false
 
     Write-Debug -Message ('Project: {0}' -f $projectKey)
     Write-Debug -message ('Repository: {0}' -f $repoName)
@@ -73,12 +74,18 @@ function ThenRepositoryTags
         [String[]]$Tag
     )
 
-    $tags = Get-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName
+    $tags = @( Get-BBServerTag -Connection $bbConnection -ProjectKey $projectKey -RepositoryKey $repoName )
+    $actualTagCount = $tags.Count
     $tags = $tags | Select-Object -ExpandProperty 'displayId'
+    $expectedTagCount = $Tag.Count
+
+    It ('should have {0} tags in repository' -f $expectedTagCount) {
+        $expectedTagCount | Should -BeExactly $actualTagCount
+    }
     foreach ( $serverTag in $Tag )
     {
-        It ('should have the tag {0}' -f $serverTag) {
-            $serverTag | should -BeIn $tags
+        It ('should have the tag(s) {0}' -f $serverTag) {
+            $serverTag | Should -BeIn $tags
         }
     }
 }
@@ -93,13 +100,13 @@ function ThenShouldFail
 Describe 'Remove-BBServerTag when removing a tag that exists' {
     Init
     GivenARepositoryWithTaggedCommits -WithTagNamed 'one', 'two', 'three'
-    WhenRemovingTags -Tag 'one', 'three'
-    ThenRepositoryTags -Tag 'two'
+    WhenRemovingTags 'one', 'three'
+    ThenRepositoryTags 'two'
 }
 
 Describe 'Remove-BBServerTag when removing a tag that does not exist' {
     Init
     GivenARepositoryWithTaggedCommits -WithTagNamed 'exists'
-    WhenRemovingTags -Tag 'doesNotExist'
+    WhenRemovingTags 'doesNotExist'
     ThenShouldFail
 }
