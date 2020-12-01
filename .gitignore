@@ -1,7 +1,6 @@
 .bbservercredential
 .bbserverlicense
 Tests/BBServerAutomationTest/server.json
-/.*
 !/.whiskey/
 /PSModules/
 /.output/

@@ -49,6 +49,7 @@ Describe 'License Notices' {
     )
 
     $directoriesToExclude = @(
+        '.github',
         '.output',
         '.whiskey',
         '.vscode',
