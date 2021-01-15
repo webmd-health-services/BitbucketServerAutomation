@@ -17,7 +17,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.10.0'
+    ModuleVersion = '1.0.0'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -88,6 +88,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
         'Get-BBServerCommitBuildStatus',
         'Get-BBServerDefaultReviewer',
         'Get-BBServerFile',
+        'Get-BBServerFileContent',
         'Get-BBServerHook',
         'Get-BBServerProject',
         'Get-BBServerPullRequest',
@@ -151,11 +152,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-* Created `Get-BBServerUser` function for getting a Bitbucket Server user account.
-* Added a `Parameter` parameter to `Invoke-BBServerRestMethod` which takes a hashtable representing the request query parameters to include when calling an API resource.
-* Created `Get-BBServerDefaultReviewer` function for getting all default reviewer conditions for a project or repository.
-* Created `New-BBServerDefaultReviewer` function for creating a new default reviewer pull request condition for a project or repository.
-* Created `Set-BBServerDefaultReviewer` function for updating an existing default reviewer pull request condition for a project or repository.
+* Created function `Get-BBServerFileContent` to get the raw content of a file from a repository.
 '@
 
         } # End of PSData hashtable
