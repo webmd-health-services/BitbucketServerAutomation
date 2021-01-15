@@ -153,6 +153,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             # ReleaseNotes of this module
             ReleaseNotes = @'
 * Created function `Get-BBServerFileContent` to get the raw content of a file from a repository.
+* Imports faster (merged individual function files into module's .psm1 file).
 '@
 
         } # End of PSData hashtable

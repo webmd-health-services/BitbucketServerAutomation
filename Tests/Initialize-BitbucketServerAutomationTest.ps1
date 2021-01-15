@@ -12,15 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-& (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon') -Force
-
-if( (Get-Module -Name 'BBServerAutomationTest') )
+if( (Test-Path -Path 'env:APPVEYOR') )
 {
-    Remove-Module -Name 'BBServerAutomationTest'
-}
+    # On the build server, files never change, so we only ever need to import Carbon once.
+    if( -not (Get-Module -Name 'Carbon') )
+    {
+        Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon') -Force
+    }
 
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'BBServerAutomationTest\BBServerAutomationTest.psm1' -Resolve)
+    if( -not (Get-Module -Name 'BitbucketServerAutomation') )
+    {
+        & (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
+    }
+
+    if( -not (Get-Module -Name 'BBServerAutomationTest') )
+    {
+        Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'BBServerAutomationTest\BBServerAutomationTest.psm1' -Resolve)
+    }
+}
+else 
+{
+    & (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
+
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\Carbon') -Force
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'BBServerAutomationTest' -Resolve) -Force
+}
 
 $bbConnection = New-BBServerTestConnection
 $netrcConfig = @"
