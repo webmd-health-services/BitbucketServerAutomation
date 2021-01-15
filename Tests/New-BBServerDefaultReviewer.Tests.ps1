@@ -27,6 +27,10 @@ function Init
 {
     $script:output = $null
 
+    Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey |
+        Select-Object -ExpandProperty 'Name' |
+        Remove-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Force
+
     Remove-BBServerTestProject -Connection $bbConnection -Key $projectKey -Force
     New-BBServerTestProject -Connection $bbConnection -Key $projectKey -Name $projectName
 
@@ -70,9 +74,7 @@ function ThenApprovalCount
         $ExpectedCount
     )
 
-    It 'should set the approval count' {
-        $output.requiredApprovals | Should -Be $ExpectedCount
-    }
+    $output.requiredApprovals | Should -Be $ExpectedCount
 }
 
 function ThenDefaultReviewerConditionCount
@@ -100,15 +102,11 @@ function ThenDefaultReviewerConditionCount
 
     if ($Is -eq 0)
     {
-        It ('should not create any default reviewer pull request conditions in the {0}' -f $conditionScope) {
-            $defaultReviewerConditions | Should -BeNullOrEmpty
-        }
+        $defaultReviewerConditions | Should -BeNullOrEmpty
     }
     else
     {
-        It ('should have the expected number of default reviewer conditions in the {0}' -f $conditionScope) {
-            $defaultReviewerConditions | Where-Object { $_.scope.type -eq $conditionScope } | Should -HaveCount $Is
-        }
+        $defaultReviewerConditions | Where-Object { $_.scope.type -eq $conditionScope } | Should -HaveCount $Is
     }
 }
 
@@ -118,23 +116,17 @@ function ThenErrorMatches
         $ExpectedError
     )
 
-    It ('should write an error matching /{0}/' -f $ExpectedError) {
-        $Global:Error | Should -Match $ExpectedError
-    }
+    $Global:Error | Should -Match $ExpectedError
 }
 
 function ThenNoErrors
 {
-    It 'should not write any errors' {
-        $Global:Error | Should -BeNullOrEmpty
-    }
+    $Global:Error | Should -BeNullOrEmpty
 }
 
 function ThenNoOutput
 {
-    It 'should not return anything' {
-        $output | Should -BeNullOrEmpty
-    }
+    $output | Should -BeNullOrEmpty
 }
 
 function ThenScoped
@@ -155,9 +147,7 @@ function ThenScoped
         $expectedScope = 'REPOSITORY'
     }
 
-    It 'should set the condition at the correct scope' {
-        $output.scope.type | Should -BeExactly $expectedScope
-    }
+    $output.scope.type | Should -BeExactly $expectedScope
 }
 
 function ThenSourceBranchMatcher
@@ -176,10 +166,8 @@ function ThenSourceBranchMatcher
         $Value = 'ANY_REF_MATCHER_ID'
     }
 
-    It 'should set the source branch matching properties' {
-        $output.sourceRefMatcher.type.id | Should -BeExactly $Type
-        $output.sourceRefMatcher.id | Should -BeExactly $Value
-    }
+    $output.sourceRefMatcher.type.id | Should -BeExactly $Type
+    $output.sourceRefMatcher.id | Should -BeExactly $Value
 }
 
 function ThenTargetBranchMatcher
@@ -198,10 +186,8 @@ function ThenTargetBranchMatcher
         $Value = 'ANY_REF_MATCHER_ID'
     }
 
-    It 'should set the target branch matching properties' {
-        $output.targetRefMatcher.type.id | Should -BeExactly $Type
-        $output.targetRefMatcher.id | Should -BeExactly $Value
-    }
+    $output.targetRefMatcher.type.id | Should -BeExactly $Type
+    $output.targetRefMatcher.id | Should -BeExactly $Value
 }
 
 function ThenUser
@@ -210,13 +196,11 @@ function ThenUser
         $ExpectedUsernames
     )
 
-    It 'should add the expected users to the condition' {
-        $output.reviewers | Should -HaveCount ($ExpectedUsernames | Measure-Object).Count
+    $output.reviewers | Should -HaveCount ($ExpectedUsernames | Measure-Object).Count
 
-        foreach ($username in $ExpectedUsernames)
-        {
-            $output.reviewers.name | Should -Contain $username
-        }
+    foreach ($username in $ExpectedUsernames)
+    {
+        $output.reviewers.name | Should -Contain $username
     }
 }
 
@@ -293,234 +277,262 @@ function WhenCreatingDefaultReviewer
 }
 
 Describe 'New-BBServerDefaultReviewer.when given minimal parameters' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 1
-    ThenScoped -ForProject
-    ThenUser 'admin'
-    ThenApprovalCount 1
-    ThenSourceBranchMatcher -Type 'ANY_REF'
-    ThenTargetBranchMatcher -Type 'ANY_REF'
-    ThenNoErrors
-
-    Context 'creating a new default reviewer condition with the same properties' {
+    It 'should create default reviewers' {
+        Init
         WhenCreatingDefaultReviewer -ForProject `
                                     -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
                                     -ApprovalCount 1
 
-        ThenDefaultReviewerConditionCount -ForProject -Is 2
+        ThenDefaultReviewerConditionCount -ForProject -Is 1
+        ThenScoped -ForProject
+        ThenUser 'admin'
+        ThenApprovalCount 1
+        ThenSourceBranchMatcher -Type 'ANY_REF'
+        ThenTargetBranchMatcher -Type 'ANY_REF'
+        ThenNoErrors
+
+        Context 'creating a new default reviewer condition with the same properties' {
+            WhenCreatingDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1
+
+            ThenDefaultReviewerConditionCount -ForProject -Is 2
+            ThenNoErrors
+        }
+
+        Context 'creating a new default reviewer condition at repository level' {
+            WhenCreatingDefaultReviewer -ForRepository `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1 `
+                                        -SourceBranchType 'Name' `
+                                        -SourceBranchValue 'develop' `
+                                        -TargetBranchType 'Name' `
+                                        -TargetBranchValue 'master'
+
+            ThenDefaultReviewerConditionCount -ForProject -Is 2
+            ThenDefaultReviewerConditionCount -ForRepository -Is 1
+            ThenScoped -ForRepository
+            ThenUser 'admin'
+            ThenApprovalCount 1
+            ThenSourceBranchMatcher -Type 'BRANCH' -Value 'develop'
+            ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
+            ThenNoErrors
+        }
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given multiple users' {
+    It 'should create on rule with multiple reviewers' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection) `
+                                    -ApprovalCount 0 `
+                                    -SourceBranchType 'Any' `
+                                    -TargetBranchType 'Any'
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 1
+        ThenUser 'admin', 'thing1', 'thing2'
+        ThenApprovalCount 0
         ThenNoErrors
     }
+}
 
-    Context 'creating a new default reviewer condition at repository level' {
-        WhenCreatingDefaultReviewer -ForRepository `
+Describe 'New-BBServerDefaultReviewer.when given user names instead of user objects' {
+    It 'should fail' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User 'admin', 'thing1', 'thing2' `
+                                    -ApprovalCount 0 `
+                                    -SourceBranchType 'Any' `
+                                    -TargetBranchType 'Any' `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given approval count is greater than number of given users' {
+    It 'should fail' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 2 `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches 'must be less than or equal to'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given source type Branch but no name value' {
+    It 'should fail' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
                                     -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
                                     -ApprovalCount 1 `
+                                    -SourceBranchType 'Name' `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches '"SourceBranchValue" cannot be empty'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given target type Branch but no name value' {
+    It 'should fail' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 1 `
+                                    -TargetBranchType 'Name' `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches '"TargetBranchValue" cannot be empty'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given source type Pattern but no pattern value' {
+    It 'should fail' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 1 `
+                                    -SourceBranchType 'Pattern' `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches '"SourceBranchValue" cannot be empty'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given target type Pattern but no pattern value' {
+    It 'should fail' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 1 `
+                                    -TargetBranchType 'Pattern' `
+                                    -ErrorAction SilentlyContinue
+
+        ThenDefaultReviewerConditionCount -ForProject -Is 0
+        ThenNoOutput
+        ThenErrorMatches '"TargetBranchValue" cannot be empty'
+    }
+}
+
+Describe 'New-BBServerDefaultReviewer.when given branch name' {
+    It 'should create reviewers matching those branches' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 0 `
                                     -SourceBranchType 'Name' `
                                     -SourceBranchValue 'develop' `
                                     -TargetBranchType 'Name' `
                                     -TargetBranchValue 'master'
 
-        ThenDefaultReviewerConditionCount -ForProject -Is 2
-        ThenDefaultReviewerConditionCount -ForRepository -Is 1
-        ThenScoped -ForRepository
-        ThenUser 'admin'
-        ThenApprovalCount 1
+        ThenDefaultReviewerConditionCount -ForProject -Is 1
+        ThenScoped -ForProject
         ThenSourceBranchMatcher -Type 'BRANCH' -Value 'develop'
         ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
         ThenNoErrors
     }
 }
 
-Describe 'New-BBServerDefaultReviewer.when given multiple users' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection) `
-                                -ApprovalCount 0 `
-                                -SourceBranchType 'Any' `
-                                -TargetBranchType 'Any'
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 1
-    ThenUser 'admin', 'thing1', 'thing2'
-    ThenApprovalCount 0
-    ThenNoErrors
-}
-
-Describe 'New-BBServerDefaultReviewer.when given user names instead of user objects' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User 'admin', 'thing1', 'thing2' `
-                                -ApprovalCount 0 `
-                                -SourceBranchType 'Any' `
-                                -TargetBranchType 'Any' `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given approval count is greater than number of given users' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 2 `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches 'must be less than or equal to'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given source type Branch but no name value' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -SourceBranchType 'Name' `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches '"SourceBranchValue" cannot be empty'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given target type Branch but no name value' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -TargetBranchType 'Name' `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches '"TargetBranchValue" cannot be empty'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given source type Pattern but no pattern value' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -SourceBranchType 'Pattern' `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches '"SourceBranchValue" cannot be empty'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given target type Pattern but no pattern value' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -TargetBranchType 'Pattern' `
-                                -ErrorAction SilentlyContinue
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches '"TargetBranchValue" cannot be empty'
-}
-
-Describe 'New-BBServerDefaultReviewer.when given branch name' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 0 `
-                                -SourceBranchType 'Name' `
-                                -SourceBranchValue 'develop' `
-                                -TargetBranchType 'Name' `
-                                -TargetBranchValue 'master'
-
-    ThenDefaultReviewerConditionCount -ForProject -Is 1
-    ThenScoped -ForProject
-    ThenSourceBranchMatcher -Type 'BRANCH' -Value 'develop'
-    ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
-    ThenNoErrors
-}
-
 Describe 'New-BBServerDefaultReviewer.when given branch pattern' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -TargetBranchType 'Pattern' `
-                                -TargetBranchValue 'hotfix/*'
+    It 'should create reviewers matching branch patterns' {
+        Init
+        WhenCreatingDefaultReviewer -ForProject `
+                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                    -ApprovalCount 1 `
+                                    -TargetBranchType 'Pattern' `
+                                    -TargetBranchValue 'hotfix/*'
 
-    ThenDefaultReviewerConditionCount -ForProject -Is 1
-    ThenScoped -ForProject
-    ThenSourceBranchMatcher -Type 'ANY_REF'
-    ThenTargetBranchMatcher -Type 'PATTERN' -Value 'hotfix/*'
-    ThenNoErrors
+        ThenDefaultReviewerConditionCount -ForProject -Is 1
+        ThenScoped -ForProject
+        ThenSourceBranchMatcher -Type 'ANY_REF'
+        ThenTargetBranchMatcher -Type 'PATTERN' -Value 'hotfix/*'
+        ThenNoErrors
+    }
 }
 
 foreach ($category in @('Feature', 'Bugfix', 'Hotfix', 'Release'))
 {
     Describe ('New-BBServerDefaultReviewer.when given branch model category "{0}"' -f $category) {
-        Init
-        WhenCreatingDefaultReviewer -ForProject `
-                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                    -ApprovalCount 1 `
-                                    -TargetBranchType 'Model' `
-                                    -TargetBranchValue $category
+        It 'should create reviwers' {
+            Init
+            WhenCreatingDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1 `
+                                        -TargetBranchType 'Model' `
+                                        -TargetBranchValue $category
 
-        ThenDefaultReviewerConditionCount -ForProject -Is 1
-        ThenSourceBranchMatcher -Type 'ANY_REF'
-        ThenTargetBranchMatcher -Type 'MODEL_CATEGORY' -Value $category.ToUpperInvariant()
-        ThenNoErrors
+            ThenDefaultReviewerConditionCount -ForProject -Is 1
+            ThenSourceBranchMatcher -Type 'ANY_REF'
+            ThenTargetBranchMatcher -Type 'MODEL_CATEGORY' -Value $category.ToUpperInvariant()
+            ThenNoErrors
+        }
     }
 }
 
 foreach ($branch in @('Production', 'Development'))
 {
     Describe ('New-BBServerDefaultReviewer.when given branch model branch "{0}"' -f $branch) {
-        Init
-        WhenCreatingDefaultReviewer -ForProject `
-                                    -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                    -ApprovalCount 1 `
-                                    -TargetBranchType 'Model' `
-                                    -TargetBranchValue $branch
+        It 'should create reviwers' {
+            Init
+            WhenCreatingDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1 `
+                                        -TargetBranchType 'Model' `
+                                        -TargetBranchValue $branch
 
-        ThenDefaultReviewerConditionCount -ForProject -Is 1
-        ThenSourceBranchMatcher -Type 'ANY_REF'
-        ThenTargetBranchMatcher -Type 'MODEL_BRANCH' -Value $branch.ToLowerInvariant()
-        ThenNoErrors
+            ThenDefaultReviewerConditionCount -ForProject -Is 1
+            ThenSourceBranchMatcher -Type 'ANY_REF'
+            ThenTargetBranchMatcher -Type 'MODEL_BRANCH' -Value $branch.ToLowerInvariant()
+            ThenNoErrors
+        }
     }
-}
 
-Describe 'New-BBServerDefaultReviewer.when given invalid branch model value' {
-    Init
-    WhenCreatingDefaultReviewer -ForProject `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1 `
-                                -TargetBranchType 'Model' `
-                                -TargetBranchValue 'InvalidBranchModelName' `
-                                -ErrorAction SilentlyContinue
+    Describe 'New-BBServerDefaultReviewer.when given invalid branch model value' {
+        It 'should fail' {
+            Init
+            WhenCreatingDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1 `
+                                        -TargetBranchType 'Model' `
+                                        -TargetBranchValue 'InvalidBranchModelName' `
+                                        -ErrorAction SilentlyContinue
 
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenNoOutput
-    ThenErrorMatches 'must be one of "Feature, Bugfix, Hotfix, Release, Development, Production"'
-}
+            ThenDefaultReviewerConditionCount -ForProject -Is 0
+            ThenNoOutput
+            ThenErrorMatches 'must be one of "Feature, Bugfix, Hotfix, Release, Development, Production"'
+        }
+    }
 
-Describe 'New-BBServerDefaultReviewer.when creating condition at repository level' {
-    Init
-    WhenCreatingDefaultReviewer -ForRepository `
-                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                -ApprovalCount 1
+    Describe 'New-BBServerDefaultReviewer.when creating condition at repository level' {
+        It 'should succeed' {
+            Init
+            WhenCreatingDefaultReviewer -ForRepository `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1
 
-    ThenDefaultReviewerConditionCount -ForProject -Is 0
-    ThenDefaultReviewerConditionCount -ForRepository -Is 1
-    ThenScoped -ForRepository
-    ThenUser 'admin'
-    ThenApprovalCount 1
-    ThenSourceBranchMatcher -Type 'ANY_REF'
-    ThenTargetBranchMatcher -Type 'ANY_REF'
-    ThenNoErrors
+            ThenDefaultReviewerConditionCount -ForProject -Is 0
+            ThenDefaultReviewerConditionCount -ForRepository -Is 1
+            ThenScoped -ForRepository
+            ThenUser 'admin'
+            ThenApprovalCount 1
+            ThenSourceBranchMatcher -Type 'ANY_REF'
+            ThenTargetBranchMatcher -Type 'ANY_REF'
+            ThenNoErrors
+        }
+    }
 }

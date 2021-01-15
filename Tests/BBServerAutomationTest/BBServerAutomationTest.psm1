@@ -19,7 +19,8 @@ Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\..\PSModules\G
 
 function New-TestRepoName
 {
-    'BitbucketServerAutomationTest-{0}' -f [IO.Path]::GetRandomFileName()
+    $now = Get-Date
+    "$($now.ToString('HH.MM.ss'))-$([IO.Path]::GetRandomFileName())"
 }
 
 function Initialize-TestRepository

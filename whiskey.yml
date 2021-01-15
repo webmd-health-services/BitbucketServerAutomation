@@ -1,5 +1,6 @@
 PublishOn:
  - master
+ - prerelease
 
 Build:
 - Version:
@@ -7,19 +8,32 @@ Build:
 
 - GetPowerShellModule:
     Name: Carbon
-    Version: 2.6.*
+    Version: 2.9.*
 
 - GetPowerShellModule:
     Name: GitAutomation
-    Version: 0.12.*
+    Version: 0.14.*
+
+- MergeFile:
+    OnlyBy: BuildServer
+    Path:
+    - BitbucketServerAutomation\Functions\*.ps1
+    DestinationPath: BitbucketServerAutomation\BitbucketServerAutomation.psm1
+    DeleteSourceFiles: true
+    TextSeparator: "$(NewLine)$(NewLine)"
 
 - Pester4:
-    Path: Tests\*.Tests.ps1
+    Script: Tests\*.Tests.ps1
+    Verbose: false
 
-- Exec: .whiskey\bin\7-Zip\7z.exe a $(WHISKEY_OUTPUT_DIRECTORY)\BitbucketServerAutomation.zip .\BitbucketServerAutomation '-xr!*.pdb'
+- Zip:
+    ArchivePath: .output\BitbucketServerAutomation.zip
+    Path: 
+    - BitbucketServerAutomation
 
 Publish:
 - PublishPowerShellModule:
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
     RepositoryName: PSGallery
     RepositoryUri: https://powershellgallery.com/api/v2/
     Path: BitbucketServerAutomation
@@ -33,6 +47,7 @@ Publish:
                 ReleaseNotes: RELEASE_NOTES
 
 - GitHubRelease:
+    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
     RepositoryName: webmd-health-services/BitbucketServerAutomation
     ApiKeyID: github.com
     Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)

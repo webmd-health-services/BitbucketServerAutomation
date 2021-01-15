@@ -37,7 +37,7 @@ function Invoke-BBServerRestMethod
                  }
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory=$true)]
         [object]
@@ -48,15 +48,18 @@ function Invoke-BBServerRestMethod
         [Microsoft.PowerShell.Commands.WebRequestMethod]
         $Method,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory,ParameterSetName='SimpleUri')]
         [string]
         # The name of the API being invoked, e.g. `projects`, `build-status`, etc. If the endpoint URI is `http://example.com/rest/build-status/1.0/commits`, the API name is between the `rest` and API version, which in this example is `build-status`.
         $ApiName,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory,ParameterSetName='SimpleUri')]
         [string]
         # The path to the resource to use. If the endpoint URI `http://example.com/rest/build-status/1.0/commits`, the ResourcePath is everything after the API version. In this case, the resource path is `commits`.
         $ResourcePath,
+
+        [Parameter(Mandatory,ParameterSetName='FullPath')]
+        [String]$Path,
 
         [Parameter(ValueFromPipeline=$true)]
         [object]
@@ -73,7 +76,10 @@ function Invoke-BBServerRestMethod
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $uriPath = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
+    if( $PSCmdlet.ParameterSetName -eq 'SimpleUri' )
+    {
+        $Path = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
+    }
 
     if ($Parameter)
     {
@@ -84,10 +90,10 @@ function Invoke-BBServerRestMethod
         }
 
         $requestQueryParameter = $requestQueryParameter.TrimStart('&')
-        $uriPath = '{0}?{1}' -f $uriPath, $requestQueryParameter
+        $Path = '{0}?{1}' -f $Path, $requestQueryParameter
     }
 
-    $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPath
+    $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$Path
 
     $bodyParam = @{ }
     if( $InputObject )
@@ -120,7 +126,7 @@ function Invoke-BBServerRestMethod
 
             while( $isLastPage -eq $false )
             {
-                if ($uriPath -match '\?')
+                if ($Path -match '\?')
                 {
                     $queryStringSeparator = '&'
                 }
@@ -129,7 +135,7 @@ function Invoke-BBServerRestMethod
                     $queryStringSeparator = '?'
                 }
 
-                $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $uriPath, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
+                $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $Path, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
                 $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
 
                 $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
@@ -147,7 +153,10 @@ function Invoke-BBServerRestMethod
         }
         else
         {
-            Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+            if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($uri,$method) )
+            {
+                Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+            }
         }
     }
     catch

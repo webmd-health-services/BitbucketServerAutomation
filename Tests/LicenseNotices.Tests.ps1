@@ -45,13 +45,13 @@ Describe 'License Notices' {
         'LICENSE',
         'NOTICE',
         'pester.xml',
-        'whiskey.yml'
+        'whiskey.yml',
+        'build.ps1'
     )
 
     $directoriesToExclude = @(
         '.github',
         '.output',
-        '.whiskey',
         '.vscode',
         'PSModules'
     )
