@@ -27,6 +27,10 @@ function Init
 {
     $script:output = $null
 
+    Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey |
+        Select-Object -ExpandProperty 'Name' |
+        Remove-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Force
+
     Remove-BBServerTestProject -Connection $bbConnection -Key $projectKey -Force
     New-BBServerTestProject -Connection $bbConnection -Key $projectKey -Name $projectName
 
@@ -132,9 +136,7 @@ function ThenApprovalCount
         $ExpectedCount
     )
 
-    It 'should set the approval count' {
-        $output.requiredApprovals | Should -Be $ExpectedCount
-    }
+    $output.requiredApprovals | Should -Be $ExpectedCount
 }
 
 function ThenErrorMatches
@@ -143,23 +145,17 @@ function ThenErrorMatches
         $ExpectedError
     )
 
-    It ('should write an error matching /{0}/' -f $ExpectedError) {
-        $Global:Error | Should -Match $ExpectedError
-    }
+    $Global:Error | Should -Match $ExpectedError
 }
 
 function ThenNoErrors
 {
-    It 'should not write any errors' {
-        $Global:Error | Should -BeNullOrEmpty
-    }
+    $Global:Error | Should -BeNullOrEmpty
 }
 
 function ThenNoOutput
 {
-    It 'should not return anything' {
-        $output | Should -BeNullOrEmpty
-    }
+    $output | Should -BeNullOrEmpty
 }
 
 function ThenScoped
@@ -180,9 +176,7 @@ function ThenScoped
         $expectedScope = 'REPOSITORY'
     }
 
-    It 'should set the condition at the correct scope' {
-        $output.scope.type | Should -BeExactly $expectedScope
-    }
+    $output.scope.type | Should -BeExactly $expectedScope
 }
 
 function ThenSourceBranchMatcher
@@ -201,10 +195,8 @@ function ThenSourceBranchMatcher
         $Value = 'ANY_REF_MATCHER_ID'
     }
 
-    It 'should set the source branch matching properties' {
-        $output.sourceRefMatcher.type.id | Should -BeExactly $Type
-        $output.sourceRefMatcher.id | Should -BeExactly $Value
-    }
+    $output.sourceRefMatcher.type.id | Should -BeExactly $Type
+    $output.sourceRefMatcher.id | Should -BeExactly $Value
 }
 
 function ThenTargetBranchMatcher
@@ -223,10 +215,8 @@ function ThenTargetBranchMatcher
         $Value = 'ANY_REF_MATCHER_ID'
     }
 
-    It 'should set the target branch matching properties' {
-        $output.targetRefMatcher.type.id | Should -BeExactly $Type
-        $output.targetRefMatcher.id | Should -BeExactly $Value
-    }
+    $output.targetRefMatcher.type.id | Should -BeExactly $Type
+    $output.targetRefMatcher.id | Should -BeExactly $Value
 }
 
 function ThenUnchanged
@@ -257,43 +247,33 @@ function ThenUnchanged
 
     if ($Scope)
     {
-        It 'should not change the existing scope' {
-            $currentCondition.scope.type | Should -BeExactly $existingCondition.scope.type
-        }
+        $currentCondition.scope.type | Should -BeExactly $existingCondition.scope.type
     }
 
     if ($ApprovalCount)
     {
-        It 'should not change the existing approval count' {
-            $currentCondition.requiredApprovals | Should -Be $existingCondition.requiredApprovals
-        }
+        $currentCondition.requiredApprovals | Should -Be $existingCondition.requiredApprovals
     }
 
     if ($SourceBranch)
     {
-        It 'should not change the existing source branch matching properties' {
-            $currentCondition.sourceRefMatcher.type.id | Should -BeExactly $existingCondition.sourceRefMatcher.type.id
-            $currentCondition.sourceRefMatcher.id | Should -BeExactly $existingCondition.sourceRefMatcher.id
-        }
+        $currentCondition.sourceRefMatcher.type.id | Should -BeExactly $existingCondition.sourceRefMatcher.type.id
+        $currentCondition.sourceRefMatcher.id | Should -BeExactly $existingCondition.sourceRefMatcher.id
     }
 
     if ($TargetBranch)
     {
-        It 'should not change the existing target branch matching properties' {
-            $currentCondition.targetRefMatcher.type.id | Should -BeExactly $existingCondition.targetRefMatcher.type.id
-            $currentCondition.targetRefMatcher.id | Should -BeExactly $existingCondition.targetRefMatcher.id
-        }
+        $currentCondition.targetRefMatcher.type.id | Should -BeExactly $existingCondition.targetRefMatcher.type.id
+        $currentCondition.targetRefMatcher.id | Should -BeExactly $existingCondition.targetRefMatcher.id
     }
 
     if ($User)
     {
-        It 'should not change the existing users' {
-            $currentCondition.reviewers | Should -HaveCount ($existingCondition.reviewers | Measure-Object).Count
+        $currentCondition.reviewers | Should -HaveCount ($existingCondition.reviewers | Measure-Object).Count
 
-            foreach ($username in $existingCondition.reviewers.name)
-            {
-                $currentCondition.reviewers.name | Should -Contain $username
-            }
+        foreach ($username in $existingCondition.reviewers.name)
+        {
+            $currentCondition.reviewers.name | Should -Contain $username
         }
     }
 }
@@ -304,13 +284,11 @@ function ThenUser
         $ExpectedUsernames
     )
 
-    It 'should add the expected users to the condition' {
-        $output.reviewers | Should -HaveCount ($ExpectedUsernames | Measure-Object).Count
+    $output.reviewers | Should -HaveCount ($ExpectedUsernames | Measure-Object).Count
 
-        foreach ($username in $ExpectedUsernames)
-        {
-            $output.reviewers.name | Should -Contain $username
-        }
+    foreach ($username in $ExpectedUsernames)
+    {
+        $output.reviewers.name | Should -Contain $username
     }
 }
 
@@ -397,213 +375,247 @@ function WhenSettingDefaultReviewer
 }
 
 Describe 'Set-BBServerDefaultReviewer.when given invalid ID' {
-    Init
-    WhenSettingDefaultReviewer -ForProject -ID 999 -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenErrorMatches 'with ID "999" does not exist'
+    It 'should fail' {
+        Init
+        WhenSettingDefaultReviewer -ForProject -ID 999 -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenErrorMatches 'with ID "999" does not exist'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when updating a Project level condition from a Repository scope' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject -ApprovalCount 1
-    WhenSettingDefaultReviewer -ForRepository -ID $existing.id  -ApprovalCount 0
-    ThenApprovalCount 0
-    ThenUnchanged $existing -Scope -SourceBranch -TargetBranch -User
-    ThenNoErrors
+    It 'should update rule' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject -ApprovalCount 1
+        WhenSettingDefaultReviewer -ForRepository -ID $existing.id  -ApprovalCount 0
+        ThenApprovalCount 0
+        ThenUnchanged $existing -Scope -SourceBranch -TargetBranch -User
+        ThenNoErrors
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when updating a Repository level condition' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    $existing = GivenDefaultReviewer -ForRepository `
-                                     -SourceBranchType 'Name' `
-                                     -SourceBranchValue 'develop' `
-                                     -ApprovalCount 1
+    It 'should update rule' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        $existing = GivenDefaultReviewer -ForRepository `
+                                        -SourceBranchType 'Name' `
+                                        -SourceBranchValue 'develop' `
+                                        -ApprovalCount 1
 
-    WhenSettingDefaultReviewer -ForRepository `
-                               -ID $existing.id `
-                               -User (Get-BBServerUser -Connection $bbConnection) `
-                               -SourceBranchType 'Any' `
-                               -TargetBranchType 'Name' `
-                               -TargetBranchValue 'master'
+        WhenSettingDefaultReviewer -ForRepository `
+                                -ID $existing.id `
+                                -User (Get-BBServerUser -Connection $bbConnection) `
+                                -SourceBranchType 'Any' `
+                                -TargetBranchType 'Name' `
+                                -TargetBranchValue 'master'
 
-    ThenScoped -ForRepository
-    ThenUser 'admin', 'thing1', 'thing2'
-    ThenSourceBranchMatcher -Type 'ANY_REF'
-    ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
-    ThenUnchanged $existing -ApprovalCount
-    ThenNoErrors
+        ThenScoped -ForRepository
+        ThenUser 'admin', 'thing1', 'thing2'
+        ThenSourceBranchMatcher -Type 'ANY_REF'
+        ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
+        ThenUnchanged $existing -ApprovalCount
+        ThenNoErrors
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when given user names instead of user objects' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    $existing = GivenDefaultReviewer -ForProject -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin')
-    WhenSettingDefaultReviewer -ForProject `
-                               -ID $existing.id `
-                               -User 'thing1', 'thing2' `
-                               -ErrorAction SilentlyContinue
+    It 'should fail' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        $existing = GivenDefaultReviewer -ForProject -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin')
+        WhenSettingDefaultReviewer -ForProject `
+                                -ID $existing.id `
+                                -User 'thing1', 'thing2' `
+                                -ErrorAction SilentlyContinue
 
-    ThenNoOutput
-    ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
+        ThenNoOutput
+        ThenErrorMatches 'doesn''t have a ".+" property. Make sure you''re using the "Get-BBServerUser"'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when approval count is greater than count of existing users' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject `
-                                     -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                     -ApprovalCount 1
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1
 
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -ApprovalCount 2 -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount
-    ThenErrorMatches 'must be less than or equal to'
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -ApprovalCount 2 -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount
+        ThenErrorMatches 'must be less than or equal to'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when approval count is greater than count of given users' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    $existing = GivenDefaultReviewer -ForProject `
-                                     -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
-                                     -ApprovalCount 1
+    It 'should fail' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        $existing = GivenDefaultReviewer -ForProject `
+                                        -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin') `
+                                        -ApprovalCount 1
 
-    WhenSettingDefaultReviewer -ForProject `
-                               -ID $existing.id `
-                               -User (Get-BBServerUser -Connection $bbConnection -Filter 'thing') `
-                               -ApprovalCount 5 `
-                               -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -User
-    ThenErrorMatches 'must be less than or equal to'
+        WhenSettingDefaultReviewer -ForProject `
+                                -ID $existing.id `
+                                -User (Get-BBServerUser -Connection $bbConnection -Filter 'thing') `
+                                -ApprovalCount 5 `
+                                -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -User
+        ThenErrorMatches 'must be less than or equal to'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when updating users' {
-    Init
-    GivenUser 'admin', 'thing1', 'thing2'
-    $existing = GivenDefaultReviewer -ForProject -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin')
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -User (Get-BBServerUser -Connection $bbConnection)
-    ThenUser 'admin', 'thing1', 'thing2'
-    ThenUnchanged $existing -Scope -ApprovalCount -SourceBranch -TargetBranch
-    ThenNoErrors
+    It 'should update reviewers' {
+        Init
+        GivenUser 'admin', 'thing1', 'thing2'
+        $existing = GivenDefaultReviewer -ForProject -User (Get-BBServerUser -Connection $bbConnection -Filter 'admin')
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -User (Get-BBServerUser -Connection $bbConnection)
+        ThenUser 'admin', 'thing1', 'thing2'
+        ThenUnchanged $existing -Scope -ApprovalCount -SourceBranch -TargetBranch
+        ThenNoErrors
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when updating approval count' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject -ApprovalCount 1
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -ApprovalCount 0
-    ThenApprovalCount 0
-    ThenUnchanged $existing -Scope -SourceBranch -TargetBranch -User
-    ThenNoErrors
+    It 'should update approval count' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject -ApprovalCount 1
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -ApprovalCount 0
+        ThenApprovalCount 0
+        ThenUnchanged $existing -Scope -SourceBranch -TargetBranch -User
+        ThenNoErrors
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when updating source branch to Any and target branch to Name' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
-    WhenSettingDefaultReviewer -ForProject `
-                               -ID $existing.id `
-                               -SourceBranchType 'Any' `
-                               -TargetBranchType 'Name' `
-                               -TargetBranchValue 'master'
-
-    ThenSourceBranchMatcher -Type 'ANY_REF'
-    ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
-    ThenUnchanged $existing -Scope -ApprovalCount -User
-    ThenNoErrors
-}
-
-Describe 'Set-BBServerDefaultReviewer.when updating source branch to Pattern and target branch to Name' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
-    WhenSettingDefaultReviewer -ForProject `
-                               -ID $existing.id `
-                               -SourceBranchType 'Pattern' `
-                               -SourceBranchValue 'hotfix/*' `
-                               -TargetBranchType 'Name' `
-                               -TargetBranchValue 'master'
-
-    ThenSourceBranchMatcher -Type 'PATTERN' -Value 'hotfix/*'
-    ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
-    ThenUnchanged $existing -Scope -ApprovalCount -User
-    ThenNoErrors
-}
-
-foreach ($category in @('Feature', 'Bugfix', 'Hotfix', 'Release'))
-{
-    Describe ('Set-BBServerDefaultReviewer.when updating branch to Model Category "{0}"' -f $category) {
+    It 'should update branches' {
         Init
         $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
         WhenSettingDefaultReviewer -ForProject `
                                 -ID $existing.id `
                                 -SourceBranchType 'Any' `
-                                -TargetBranchType 'Model' `
-                                -TargetBranchValue $category
+                                -TargetBranchType 'Name' `
+                                -TargetBranchValue 'master'
 
         ThenSourceBranchMatcher -Type 'ANY_REF'
-        ThenTargetBranchMatcher -Type 'MODEL_CATEGORY' -Value $category.ToUpperInvariant()
+        ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
         ThenUnchanged $existing -Scope -ApprovalCount -User
         ThenNoErrors
+    }
+}
+
+Describe 'Set-BBServerDefaultReviewer.when updating source branch to Pattern and target branch to Name' {
+    It 'should update rule' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
+        WhenSettingDefaultReviewer -ForProject `
+                                -ID $existing.id `
+                                -SourceBranchType 'Pattern' `
+                                -SourceBranchValue 'hotfix/*' `
+                                -TargetBranchType 'Name' `
+                                -TargetBranchValue 'master'
+
+        ThenSourceBranchMatcher -Type 'PATTERN' -Value 'hotfix/*'
+        ThenTargetBranchMatcher -Type 'BRANCH' -Value 'master'
+        ThenUnchanged $existing -Scope -ApprovalCount -User
+        ThenNoErrors
+    }
+}
+
+foreach ($category in @('Feature', 'Bugfix', 'Hotfix', 'Release'))
+{
+    Describe ('Set-BBServerDefaultReviewer.when updating branch to Model Category "{0}"' -f $category) {
+        It 'should update rule' {
+            Init
+            $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
+            WhenSettingDefaultReviewer -ForProject `
+                                    -ID $existing.id `
+                                    -SourceBranchType 'Any' `
+                                    -TargetBranchType 'Model' `
+                                    -TargetBranchValue $category
+
+            ThenSourceBranchMatcher -Type 'ANY_REF'
+            ThenTargetBranchMatcher -Type 'MODEL_CATEGORY' -Value $category.ToUpperInvariant()
+            ThenUnchanged $existing -Scope -ApprovalCount -User
+            ThenNoErrors
+        }
     }
 }
 
 foreach ($branch in @('Production', 'Development'))
 {
     Describe ('Set-BBServerDefaultReviewer.when updating branch to Model Branch "{0}"' -f $branch) {
-        Init
-        $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
-        WhenSettingDefaultReviewer -ForProject `
-                                -ID $existing.id `
-                                -SourceBranchType 'Any' `
-                                -TargetBranchType 'Model' `
-                                -TargetBranchValue $branch
+        It 'should update rule' {
+            Init
+            $existing = GivenDefaultReviewer -ForProject -SourceBranchType 'Name' -SourceBranchValue 'develop'
+            WhenSettingDefaultReviewer -ForProject `
+                                    -ID $existing.id `
+                                    -SourceBranchType 'Any' `
+                                    -TargetBranchType 'Model' `
+                                    -TargetBranchValue $branch
 
-        ThenSourceBranchMatcher -Type 'ANY_REF'
-        ThenTargetBranchMatcher -Type 'MODEL_BRANCH' -Value $branch.ToLowerInvariant()
-        ThenUnchanged $existing -Scope -ApprovalCount -User
-        ThenNoErrors
+            ThenSourceBranchMatcher -Type 'ANY_REF'
+            ThenTargetBranchMatcher -Type 'MODEL_BRANCH' -Value $branch.ToLowerInvariant()
+            ThenUnchanged $existing -Scope -ApprovalCount -User
+            ThenNoErrors
+        }
     }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when given source branch value but no type' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -SourceBranchValue 'hotfix/*' -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
-    ThenErrorMatches 'must specify a "SourceBranchType" when giving a "SourceBranchValue"'
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -SourceBranchValue 'hotfix/*' -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
+        ThenErrorMatches 'must specify a "SourceBranchType" when giving a "SourceBranchValue"'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when given target branch value but no type' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -TargetBranchValue 'hotfix/*' -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
-    ThenErrorMatches 'must specify a "TargetBranchType" when giving a "TargetBranchValue"'
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -TargetBranchValue 'hotfix/*' -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
+        ThenErrorMatches 'must specify a "TargetBranchType" when giving a "TargetBranchValue"'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when given invalid value for Model branch type' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id ` -TargetBranchType 'Model' ` -TargetBranchValue 'custom' -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
-    ThenErrorMatches 'must be one of "Feature, Bugfix, Hotfix, Release, Development, Production"'
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id ` -TargetBranchType 'Model' ` -TargetBranchValue 'custom' -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
+        ThenErrorMatches 'must be one of "Feature, Bugfix, Hotfix, Release, Development, Production"'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when source branch Type other than "Any" but no Value' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -SourceBranchType 'Name' -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
-    ThenErrorMatches '"SourceBranchValue" cannot be empty'
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -SourceBranchType 'Name' -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
+        ThenErrorMatches '"SourceBranchValue" cannot be empty'
+    }
 }
 
 Describe 'Set-BBServerDefaultReviewer.when target branch Type other than "Any" but no Value' {
-    Init
-    $existing = GivenDefaultReviewer -ForProject
-    WhenSettingDefaultReviewer -ForProject -ID $existing.id -TargetBranchType 'Name' -ErrorAction SilentlyContinue
-    ThenNoOutput
-    ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
-    ThenErrorMatches '"TargetBranchValue" cannot be empty'
+    It 'should fail' {
+        Init
+        $existing = GivenDefaultReviewer -ForProject
+        WhenSettingDefaultReviewer -ForProject -ID $existing.id -TargetBranchType 'Name' -ErrorAction SilentlyContinue
+        ThenNoOutput
+        ThenUnchanged $existing -ApprovalCount -SourceBranch -TargetBranch -User
+        ThenErrorMatches '"TargetBranchValue" cannot be empty'
+    }
 }

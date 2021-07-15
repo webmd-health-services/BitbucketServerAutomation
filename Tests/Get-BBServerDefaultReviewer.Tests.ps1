@@ -30,6 +30,10 @@ function Init
 {
     $script:output = $null
 
+    Get-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey |
+        Select-Object -ExpandProperty 'Name' |
+        Remove-BBServerRepository -Connection $bbConnection -ProjectKey $projectKey -Force
+
     Remove-BBServerTestProject -Connection $bbConnection -Key $projectKey -Force
     New-BBServerTestProject -Connection $bbConnection -Key $projectKey -Name $projectName
 
@@ -100,20 +104,14 @@ function ThenDefaultReviewerScope
         $ForRepository = 0
     )
 
-    It 'should return default reviewers for the correct scope' {
-        $output | Should -Not -BeNullOrEmpty
-
-        $output | Where-Object { $_.scope.type -eq 'PROJECT' } | Should -HaveCount $ForProject
-
-        $output | Where-Object { $_.scope.type -eq 'REPOSITORY' } | Should -HaveCount $ForRepository
-    }
+    $output | Should -Not -BeNullOrEmpty
+    $output | Where-Object { $_.scope.type -eq 'PROJECT' } | Should -HaveCount $ForProject
+    $output | Where-Object { $_.scope.type -eq 'REPOSITORY' } | Should -HaveCount $ForRepository
 }
 
 function ThenNoErrors
 {
-    It 'should not write any errors' {
-        $Global:Error | Should -BeNullOrEmpty
-    }
+    $Global:Error | Should -BeNullOrEmpty
 }
 
 function ThenOutputCount
@@ -122,33 +120,27 @@ function ThenOutputCount
         $ExpectedCount
     )
 
-    It 'should return the correct number of objects' {
-        $output | Should -HaveCount $ExpectedCount
-    }
+    $output | Should -HaveCount $ExpectedCount
 }
 
 function ThenReturnedDefaultReviewerInfo
 {
     $expectedProperties = @('id', 'scope', 'sourceRefMatcher', 'targetRefMatcher', 'reviewers', 'requiredApprovals')
 
-    It 'should return the default reviewer objects as-is from the api endpoint' {
-        $output | Should -Not -BeNullOrEmpty
+    $output | Should -Not -BeNullOrEmpty
 
-        foreach ($object in $output)
+    foreach ($object in $output)
+    {
+        foreach ($property in $expectedProperties)
         {
-            foreach ($property in $expectedProperties)
-            {
-                $object | Get-Member -Name $property | Should -Not -BeNullOrEmpty
-            }
+            $object | Get-Member -Name $property | Should -Not -BeNullOrEmpty
         }
     }
 }
 
 function ThenReturnedNothing
 {
-    It 'should not return anything' {
-        $output | Should -BeNullOrEmpty
-    }
+    $output | Should -BeNullOrEmpty
 }
 
 function WhenGettingDefaultReviewers
@@ -176,50 +168,60 @@ function WhenGettingDefaultReviewers
 }
 
 Describe 'Get-BBServerDefaultReviewer.when there are no default reviewers' {
-    Init
-    WhenGettingDefaultReviewers -ForRepository
-    ThenReturnedNothing
-    ThenNoErrors
+    It 'should return nothing' {
+        Init
+        WhenGettingDefaultReviewers -ForRepository
+        ThenReturnedNothing
+        ThenNoErrors
+    }
 }
 
 Describe 'Get-BBServerDefaultReviewer.when getting for project scope' {
-    Init
-    GivenDefaultReviewerConfig -ForProject
-    GivenDefaultReviewerConfig -ForRepository
-    WhenGettingDefaultReviewers -ForProject
-    ThenOutputCount 1
-    ThenDefaultReviewerScope -ForProject 1 -ForRepository 0
-    ThenReturnedDefaultReviewerInfo
-    ThenNoErrors
+    It 'should get just the projects reviewers' {
+        Init
+        GivenDefaultReviewerConfig -ForProject
+        GivenDefaultReviewerConfig -ForRepository
+        WhenGettingDefaultReviewers -ForProject
+        ThenOutputCount 1
+        ThenDefaultReviewerScope -ForProject 1 -ForRepository 0
+        ThenReturnedDefaultReviewerInfo
+        ThenNoErrors
+    }
 }
 
 Describe 'Get-BBServerDefaultReviewer.when multiple default reviewer configs exist' {
-    Init
-    1..4 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
-    WhenGettingDefaultReviewers -ForProject
-    ThenOutputCount 4
-    ThenDefaultReviewerScope -ForProject 4 -ForRepository 0
-    ThenReturnedDefaultReviewerInfo
-    ThenNoErrors
+    It 'should get all the reviewer configs' {
+        Init
+        1..4 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
+        WhenGettingDefaultReviewers -ForProject
+        ThenOutputCount 4
+        ThenDefaultReviewerScope -ForProject 4 -ForRepository 0
+        ThenReturnedDefaultReviewerInfo
+        ThenNoErrors
+    }
 }
 
 Describe 'Get-BBServerDefaultReviewer.when getting for repository scope' {
-    Init
-    1..2 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
-    1..4 | ForEach-Object { GivenDefaultReviewerConfig -ForRepository }
-    WhenGettingDefaultReviewers -ForRepository
-    ThenOutputCount 6
-    ThenDefaultReviewerScope -ForProject 2 -ForRepository 4
-    ThenReturnedDefaultReviewerInfo
-    ThenNoErrors
+    It 'should get both project and repository reviewers' {
+        Init
+        1..2 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
+        1..4 | ForEach-Object { GivenDefaultReviewerConfig -ForRepository }
+        WhenGettingDefaultReviewers -ForRepository
+        ThenOutputCount 6
+        ThenDefaultReviewerScope -ForProject 2 -ForRepository 4
+        ThenReturnedDefaultReviewerInfo
+        ThenNoErrors
+    }
 }
 
 Describe 'Get-BBServerDefaultReviewer.when getting for repository scope but only project level default reviewers exist' {
-    Init
-    1..2 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
-    WhenGettingDefaultReviewers -ForRepository
-    ThenOutputCount 2
-    ThenDefaultReviewerScope -ForProject 2 -ForRepository 0
-    ThenReturnedDefaultReviewerInfo
-    ThenNoErrors
+    It 'should get project reviewers' {
+        Init
+        1..2 | ForEach-Object { GivenDefaultReviewerConfig -ForProject }
+        WhenGettingDefaultReviewers -ForRepository
+        ThenOutputCount 2
+        ThenDefaultReviewerScope -ForProject 2 -ForRepository 0
+        ThenReturnedDefaultReviewerInfo
+        ThenNoErrors
+    }
 }
