@@ -173,7 +173,7 @@ Describe 'Move-BBServerRepository.when repository with same name already exists 
     GivenASourceProject $sourceProjectKey -WithRepo $repoName
     GivenATargetProject $targetProjectKey -WithRepo $repoName
     WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo $repoName
-    ThenErrors -ShouldBeThrown ('This repository URL is already taken by ''{0}''.' -f $repoName)
+    ThenErrors -ShouldBeThrown 'This repository URL is already taken'
     ThenRepositoryShouldNotHaveMoved
 }
 
