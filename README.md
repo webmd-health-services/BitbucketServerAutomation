@@ -104,6 +104,11 @@ Then invoke a single test script:
 
 Test scripts go in the `Tests` directory. New module functions go in the `BitbucketServerAutomation\Functions` directory.
 
+## Troubleshooting
+
+If tests fail because they can't login, it means Bitbucket Server wasn't setup automatically. Automatic setup can fail
+if the license you're using is old or has expired. Renew the license if needed.
+
 ## Cleaning Up
 
 Remove the locally running instance of Bitbucket Server with:
