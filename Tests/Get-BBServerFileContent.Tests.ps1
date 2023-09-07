@@ -131,3 +131,24 @@ Describe 'Get-BBServerFile.when getting file at specific commit' {
         ThenContentIs '1'
     }
 }
+
+Describe 'Get-BBServerFile.when getting contents from a json file' {
+    It 'should return contents as json' {
+        $content = @"
+[
+    {
+        "name":  "test",
+        "number":  1
+    },
+    {
+        "name":  "test2",
+        "port":  8099
+    }
+]
+"@
+        Init
+        GivenFile 'test file' -WithContent $content
+        WhenGettingContentOf 'test file'
+        ThenContentIs $content
+    }
+}
