@@ -24,12 +24,12 @@ build_script:
 
     git config --global user.email $('{0}@{1}' -f $env:USERNAME,$env:COMPUTERNAME)
 
-    .\init.ps1 -Windows -Verbose
+    # .\init.ps1 -Windows -Verbose
 
-    .\build.ps1 -Verbose
+    # .\build.ps1 -Verbose
 
-# on_finish:
-# - ps: $blockRdp = $true; $nonat = $true ; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+on_finish:
+- ps: $blockRdp = $true; $nonat = $true ; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 artifacts:
 - path: .output/*
