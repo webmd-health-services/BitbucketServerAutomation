@@ -1,0 +1,35 @@
+version: 0.0.0+{build}
+
+skip_tags: true
+
+skip_branch_with_pr: true
+
+image: Visual Studio 2019
+
+environment:
+  BBSERVER_LICENSE:
+    secure: ssUlgiOxYbToIOu6p0Bqf5vZnbTtigMVenOehfFP/Mz7weaLZHMykSPktrBAvm/Hsq69JdSG/jNd1z3YIsMOsgix+GKUQ+ePd99XHp3Jy+A2i/X3tFL+usE5VvRpyEPorFUDH1bY/22U47M2XMckNJW9rMy21Kl9nrnh+cdViNgP55rseIiYTaG1IdNg2re3lmjMrVbIgNBF4TGlg5I28PoI3aFCmtlQ49l6aSsKUc50gT4iWCeRf79TYW7oTXr59sW1WU5tgF3PIUlXbP0DnXY+bKBjre8cO0wFRQn4t+QrbzTmiS8PI18eZnHmPj7YaIXo3/nyd04TOCf1Mk/Qcm96lqp6ainOaCI07HGnKeWNGQtDWLkqPkJI9L2Y/oo22htC6IRhABakSt1olV94G2kUsN3LeNdAhRVXmRY+2Cyj3C82CpEqeuMUkMUsYUg9JJvClxU/nKbus+oakm1xdymQeLcudjoqtHxTDoyNfGgXvf+HMgdK4keAWJY4wVv3Ea+kuWUqV5ha3SQz8D9jpiOzz13FCZUo0sWj77F00dS/jan6pKbQpyNYDsdcifougLwdQOd09MCEr7yMc5tAeMBDork1lExWlLnqF3KKfY1XfFIgv3yJFJYI0VZgUnrm5XJrgAS6W+ojX4Lkxv0UVydiFOhO16ISTccwWt4rdgfYdp4ASgnDKrMmqsoDaKxlnHKGs06oEZIXxDTKTlweI9k9qb20rv/b98gXKY5K5uArOAh3HckgycXFCJIuparQf7BU3vPOz8vP/Wn/jgu5JCES6z+eHhw72sx29f2lbrc=
+  POWERSHELL_GALLERY_API_KEY:
+    secure: gMUPoq36iBrYApVGOy915dgyIVlDKpIUGlcb2Sgtq6E5oeXFKSgEgzeN1oXhudeu
+  GITHUB_ACCESS_TOKEN:
+    secure: jZMn37686kVgxNMWkQrUqGogebn93OCsxY7ki46ln+xlV1qqp+xU9x3woh1Xmami
+
+build_script:
+- ps: >-
+    $PSVersionTable
+
+    $env:BBSERVER_LICENSE | Set-Content -Path '.bbserverlicense'
+
+    git config --global user.name $env:USERNAME
+
+    git config --global user.email $('{0}@{1}' -f $env:USERNAME,$env:COMPUTERNAME)
+
+    .\init.ps1 -Windows -Verbose
+
+    .\build.ps1 -Verbose
+
+# on_finish:
+# - ps: $blockRdp = $true; $nonat = $true ; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+artifacts:
+- path: .output/*
