@@ -75,7 +75,7 @@ function WhenCreatingANewBranch
     if( $ShouldThrowInvalidBranchPointException )
     {
         It 'should throw an error that an invalid branch start point was defined' {
-            $Global:Error | Should -Match ('Branch point ''{0}'' does not exist in this repository' -f $StartPoint)
+            $Global:Error | Should -Match ('branch_cloned_from_invalid_start {0}' -f $StartPoint)
         }
     }
     elseif( $ShouldThrowDuplicateBranchException )
