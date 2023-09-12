@@ -31,6 +31,9 @@ Build:
     Path: 
     - BitbucketServerAutomation
 
+- PowerShell:
+    ScriptBlock: Copy-Item -Path @('.\CHANGELOG.md', '.\README.md') -Destination '.\BitbucketServerAutomation'
+
 Publish:
 - PublishPowerShellModule:
     UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
