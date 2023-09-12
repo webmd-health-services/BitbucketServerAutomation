@@ -1,0 +1,27 @@
+version: 0.0.0+{build}
+
+skip_tags: true
+
+skip_branch_with_pr: true
+
+image: Visual Studio 2019
+
+build_script:
+- ps: >-
+    $PSVersionTable
+
+    $env:BBSERVER_LICENSE | Set-Content -Path '.bbserverlicense'
+
+    git config --global user.name $env:USERNAME
+
+    git config --global user.email $('{0}@{1}' -f $env:USERNAME,$env:COMPUTERNAME)
+
+    .\init.ps1 -Windows
+
+    .\build.ps1
+
+# on_finish:
+# - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+artifacts:
+- path: .output/*
