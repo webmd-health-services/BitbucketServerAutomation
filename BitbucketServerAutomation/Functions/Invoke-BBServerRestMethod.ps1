@@ -28,7 +28,8 @@ function Invoke-BBServerRestMethod
     A Bitbucket Server URI has the form `https://example.com/rest/API_NAME/API_VERSION/RESOURCE_PATH`. `API_VERSION` is
     taken from the connection object passed to the `Connection` parameter. The `API_NAME` path should be passed to the
     `ApiName` paramter. The `RESOURCE_PATH` path should be passed to the `ResourcePath` parameter. The base URI is taken
-    from the `Uri` property of the connection object passed to the `Connection` parameter.
+    from the `Uri` property of the connection object passed to the `Connection` parameter. If you want the raw text
+    content from the API back instead of an object, use the `-Raw` switch.
 
     .EXAMPLE
     $body | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $commitID)

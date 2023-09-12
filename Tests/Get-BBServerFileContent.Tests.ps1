@@ -99,7 +99,7 @@ function ThenContentIs
         [String]$ExpectedString
     )
 
-    $content | Should -Be $ExpectedString
+    $script:content | Should -Be $ExpectedString
 }
 
 Describe 'Get-BBServerFile.when getting a file with one line' {
@@ -129,5 +129,16 @@ Describe 'Get-BBServerFile.when getting file at specific commit' {
         GivenFile 'THIRD!' -WithContent '3'
         WhenGettingContentOf 'THIRD!' -AtCommitish 'HEAD~2'
         ThenContentIs '1'
+    }
+}
+
+Describe 'Get-BBServerFile.when getting contents from a json file' {
+    It 'should return contents as json' {
+        $content = @(@{'name' = 'test'; 'number'= 1}, @{'name' = 'test2'; 'number' = 2})
+        $content = $content | ConvertTo-Json -Compress
+        Init
+        GivenFile 'testfile.json' -WithContent $content
+        WhenGettingContentOf 'testfile.json'
+        ThenContentIs $content
     }
 }
