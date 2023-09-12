@@ -19,14 +19,23 @@ function Invoke-BBServerRestMethod
     Calls a method in the Bitbucket Server REST API.
 
     .DESCRIPTION
-    The `Invoke-BBServerRestMethod` function calls a method on the Bitbucket Server REST API. You pass it a Connection object (returned from `New-BBServerConnection`), the HTTP method to use, the name of API (via the `ApiName` parametr), the name/path of the resource via the `ResourcePath` parameter, and a hashtable/object/psobject via the `InputObject` parameter representing the data to send in the body of the request. The data is converted to JSON and sent in the body of the request.
+    The `Invoke-BBServerRestMethod` function calls a method on the Bitbucket Server REST API. You pass it a Connection
+    object (returned from `New-BBServerConnection`), the HTTP method to use, the name of API (via the `ApiName`
+    parametr), the name/path of the resource via the `ResourcePath` parameter, and a hashtable/object/psobject via the
+    `InputObject` parameter representing the data to send in the body of the request. The data is converted to JSON and
+    sent in the body of the request.
 
-    A Bitbucket Server URI has the form `https://example.com/rest/API_NAME/API_VERSION/RESOURCE_PATH`. `API_VERSION` is taken from the connection object passed to the `Connection` parameter. The `API_NAME` path should be passed to the `ApiName` paramter. The `RESOURCE_PATH` path should be passed to the `ResourcePath` parameter. The base URI is taken from the `Uri` property of the connection object passed to the `Connection` parameter.
+    A Bitbucket Server URI has the form `https://example.com/rest/API_NAME/API_VERSION/RESOURCE_PATH`. `API_VERSION` is
+    taken from the connection object passed to the `Connection` parameter. The `API_NAME` path should be passed to the
+    `ApiName` paramter. The `RESOURCE_PATH` path should be passed to the `ResourcePath` parameter. The base URI is taken
+    from the `Uri` property of the connection object passed to the `Connection` parameter. If you want the raw text
+    content from the API back instead of an object, use the `-Raw` switch.
 
     .EXAMPLE
     $body | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $commitID)
 
-    Demonstrates how to call the /build-status API's `/commits/COMMIT_ID` resource. Body is a hashtable that looks like this:
+    Demonstrates how to call the /build-status API's `/commits/COMMIT_ID` resource. Body is a hashtable that looks like
+    this:
 
         $body = @{
                     state = 'INPROGRESS';
@@ -39,38 +48,40 @@ function Invoke-BBServerRestMethod
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
         # The connection to use to invoke the REST method.
-        $Connection,
+        [Parameter(Mandatory=$true)]
+        [object] $Connection,
 
         [Parameter(Mandatory=$true)]
         [Microsoft.PowerShell.Commands.WebRequestMethod]
         $Method,
 
+        # The name of the API being invoked, e.g. `projects`, `build-status`, etc. If the endpoint URI is
+        # `http://example.com/rest/build-status/1.0/commits`, the API name is between the `rest` and API version, which
+        # in this example is `build-status`.
         [Parameter(Mandatory,ParameterSetName='SimpleUri')]
-        [string]
-        # The name of the API being invoked, e.g. `projects`, `build-status`, etc. If the endpoint URI is `http://example.com/rest/build-status/1.0/commits`, the API name is between the `rest` and API version, which in this example is `build-status`.
-        $ApiName,
+        [string] $ApiName,
 
+        # The path to the resource to use. If the endpoint URI `http://example.com/rest/build-status/1.0/commits`, the
+        # ResourcePath is everything after the API version. In this case, the resource path is `commits`.
         [Parameter(Mandatory,ParameterSetName='SimpleUri')]
-        [string]
-        # The path to the resource to use. If the endpoint URI `http://example.com/rest/build-status/1.0/commits`, the ResourcePath is everything after the API version. In this case, the resource path is `commits`.
-        $ResourcePath,
+        [string] $ResourcePath,
 
         [Parameter(Mandatory,ParameterSetName='FullPath')]
-        [String]$Path,
+        [String] $Path,
 
         [Parameter(ValueFromPipeline=$true)]
-        [object]
-        $InputObject,
+        [object] $InputObject,
 
-        [hashtable]
         # Hashtable representing the request query parameters to include when calling the API resource.
-        $Parameter,
+        [hashtable] $Parameter,
 
-        [switch]
-        $IsPaged
+        [switch] $IsPaged,
+
+        [String] $ContentType = 'application/json',
+
+        # Return the raw response content, not a JSON object.
+        [switch] $Raw
     )
 
     Set-StrictMode -Version 'Latest'
@@ -153,9 +164,37 @@ function Invoke-BBServerRestMethod
         }
         else
         {
-            if( $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($uri,$method) )
+
+            $cmdName = 'Invoke-RestMethod'
+            if ($Raw)
             {
-                Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+                $cmdName = 'Invoke-WebRequest'
+            }
+
+            $invokeArgs = @{}
+            if ((Get-Command -Name $cmdName -ParameterName 'UseBasicParsing' -ErrorAction Ignore))
+            {
+                $invokeArgs['UseBasicParsing'] = $true
+            }
+
+            if ($Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($uri,$method))
+            {
+                $response = & $cmdName -Method $Method `
+                                       -Uri $uri `
+                                       -Headers $headers `
+                                       -ContentType $ContentType `
+                                       @bodyParam `
+                                       @invokeArgs `
+                                       -ErrorVariable 'errors'
+                if ($Raw)
+                {
+                    $response.Content | Write-Output
+                }
+                else
+                {
+                    $response | Write-Output
+                }
+
             }
         }
     }

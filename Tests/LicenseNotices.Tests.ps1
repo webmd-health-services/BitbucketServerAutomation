@@ -46,7 +46,8 @@ Describe 'License Notices' {
         'NOTICE',
         'pester.xml',
         'whiskey.yml',
-        'build.ps1'
+        'build.ps1',
+        'appveyor.yml'
     )
 
     $directoriesToExclude = @(
