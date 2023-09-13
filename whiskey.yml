@@ -26,21 +26,17 @@ Build:
     Script: Tests\*.Tests.ps1
     Verbose: false
 
-- Zip:
-    ArchivePath: .output\BitbucketServerAutomation.zip
-    Path: 
-    - BitbucketServerAutomation
-
 - PowerShell:
     ScriptBlock: Copy-Item -Path @('.\CHANGELOG.md', '.\README.md') -Destination '.\BitbucketServerAutomation'
 
+- Zip:
+    ArchivePath: .output\BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip
+    Path: 
+    - BitbucketServerAutomation
+
 Publish:
 - PublishPowerShellModule:
-    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
-    RepositoryName: PSGallery
-    RepositoryUri: https://powershellgallery.com/api/v2/
     Path: BitbucketServerAutomation
-    ApiKeyID: PowerShellGallery
 
 - SetVariableFromPowerShellDataFile:
     Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
@@ -49,15 +45,21 @@ Publish:
             PSData:
                 ReleaseNotes: RELEASE_NOTES
 
-- GitHubRelease:
-    UnlessExists: env:APPVEYOR_PULL_REQUEST_NUMBER
-    RepositoryName: webmd-health-services/BitbucketServerAutomation
-    ApiKeyID: github.com
-    Tag: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
-    Commitish: $(WHISKEY_SCM_COMMIT_ID)
-    Name: $(WHISKEY_SEMVER2_NO_BUILD_METADATA)
-    Description: $(RELEASE_NOTES)
-    Assets:
-    - Path: .output\BitbucketServerAutomation.zip
-      ContentType: application/zip
-      Name: BitbucketServerAutomation-$(WHISKEY_SEMVER2_NO_BUILD_METADATA).zip
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [ 'PushArtifact',
+                '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip',
+                '-DeploymentName',
+                'GitHub' 
+    ]
+
+- Exec:
+    OnlyBy: BuildServer
+    Path: appveyor
+    Argument: [
+        'PushArtifact',
+        '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
+        '-DeploymentName',
+        'PowerShellGallery'
+    ]
