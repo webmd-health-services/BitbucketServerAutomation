@@ -17,7 +17,7 @@
     RootModule = 'BitbucketServerAutomation.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.1.0'
+    ModuleVersion = '1.1.1'
 
     # ID used to uniquely identify this module
     GUID = 'ef458b99-5fc4-4802-99a7-0604b71e3dd7'
@@ -151,10 +151,7 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = @'
-* Created function `Get-BBServerFileContent` to get the raw content of a file from a repository.
-* Imports faster (merged individual function files into module's .psm1 file).
-'@
+            ReleaseNotes = 'https://github.com/webmd-health-services/BitbucketServerAutomation/blob/main/CHANGELOG.md'
 
         } # End of PSData hashtable
 
