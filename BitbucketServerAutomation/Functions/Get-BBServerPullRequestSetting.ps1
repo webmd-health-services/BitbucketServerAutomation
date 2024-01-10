@@ -1,26 +1,13 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Get-BBServerPullRequestSetting
 {
     <#
     .SYNOPSIS
     Gets a list of pull request settings from a repository.
-    
+
     .DESCRIPTION
     The `Get-BBServerPullRequestSetting` function returns a list of all pull request settings in a Bitbucket Server repository.
-    
+
     If you pass a setting name, the function will only return the information for the named setting. It will return an error if no setting exists that match the search criteria.
 
     .EXAMPLE
@@ -54,13 +41,13 @@ function Get-BBServerPullRequestSetting
         # The name of the pull request setting to retrieve. When omitted, all settings are returned.
         $SettingName
     )
-    
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     $resourcePath = ('projects/{0}/repos/{1}/settings/pull-requests' -f $ProjectKey, $RepoName)
     $pullRequestSettings = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath
-    
+
     if( $SettingName )
     {
         try

@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Get-BBServerRepository
 {
@@ -19,7 +6,7 @@ function Get-BBServerRepository
     Gets Bitbucket Server repositories.
 
     .DESCRIPTION
-    The `Get-BBServerRepository` function gets Bitbucket Server repositories. Only the repositories under a specific project are returned. Pass the project's key/ID whose repositories to get with the `ProjectKey` parameter. 
+    The `Get-BBServerRepository` function gets Bitbucket Server repositories. Only the repositories under a specific project are returned. Pass the project's key/ID whose repositories to get with the `ProjectKey` parameter.
 
     Use the `New-BBServerConnection` function to create a connection object that is passed to the `Connection` parameter.
 
@@ -60,18 +47,18 @@ function Get-BBServerRepository
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     $resourcePath = 'projects/{0}/repos' -f $ProjectKey
-    
+
     $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $resourcePath -IsPaged -ErrorVariable 'errors'
-    
+
     if( $Name )
     {
         $result | Where-Object { return $_.Name -like $Name } | Add-PSTypeName -RepositoryInfo
     }
     else
     {
-    
+
         $result | Add-PSTypeName -RepositoryInfo
     }
 }

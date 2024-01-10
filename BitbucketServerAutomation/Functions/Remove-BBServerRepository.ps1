@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Remove-BBServerRepository
 {
@@ -60,15 +47,15 @@ function Remove-BBServerRepository
         $Name,
 
         [Switch]
-        # Don't prompt the user to confirm the deletion of the repository. This is a dangerous switch to use, since repository deletions can't be undone. 
+        # Don't prompt the user to confirm the deletion of the repository. This is a dangerous switch to use, since repository deletions can't be undone.
         $Force
     )
 
-    process 
+    process
     {
         Set-StrictMode -Version 'Latest'
         Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
         if( $Name.pstypenames -contains 'Atlassian.Bitbucket.Server.RepositoryInfo' )
         {
             $repoInfo = $Name
@@ -98,7 +85,7 @@ function Remove-BBServerRepository
         if( $Force -or $PSCmdlet.ShouldProcess($whatIfMessage,$confirmMessage,'Confirm Permanently Deleting Repository') )
         {
             $result = Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$Name)
-        
+
             if( $result )
             {
                 $result | ConvertTo-Json | Write-Verbose
