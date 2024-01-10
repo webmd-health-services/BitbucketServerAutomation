@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Get-BBServerBranch
 {
@@ -20,7 +7,7 @@ function Get-BBServerBranch
 
     .DESCRIPTION
     The `Get-BBServerBranch` function returns a list of all branches in a Bitbucket Server repository.
-    
+
     If you pass a branch name, the function will only return the information for the named branch and will return nothing if no branches are found that match the search criteria. Wildcards are allowed to search for files.
 
     .EXAMPLE
@@ -54,18 +41,18 @@ function Get-BBServerBranch
         # The name of the branch to search for.
         $BranchName
     )
-    
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     $resourcePath = ('projects/{0}/repos/{1}/branches' -f $ProjectKey, $RepoName)
-    
+
     $getBranches = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged
-    
+
     if( $BranchName )
     {
         return $getBranches | Where-Object { $_.displayId -like $BranchName }
     }
-    
+
     return $getBranches
 }

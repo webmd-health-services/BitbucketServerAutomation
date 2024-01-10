@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Set-BBServerDefaultBranch
 {
@@ -20,7 +7,7 @@ function Set-BBServerDefaultBranch
 
     .DESCRIPTION
     The `Set-BBServerDefaultBranch` function sets the specified branch as the default branch in a repository.
-    
+
     .EXAMPLE
     Set-BBServerDefaultBranch -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -BranchName 'develop'
 
@@ -48,22 +35,22 @@ function Set-BBServerDefaultBranch
         # The name of the branch to configure as the default branch.
         $BranchName
     )
-    
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     $resourcePath = ('projects/{0}/repos/{1}/branches/default' -f $ProjectKey, $RepoName)
-    
+
     $getCurrentBranch = Get-BBServerBranch -Connection $Connection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $BranchName
     if( !$getCurrentBranch )
     {
         Write-Error -Message ('A branch with the name ''{0}'' does not exist in the ''{1}'' repository and cannot be set as the default. Use the `New-BBServerBranch` function to create new branches.' -f $BranchName, $RepoName)
         return
     }
-    
+
     $defaultBranchConfig = @{ id = $getCurrentBranch.id }
     $setDefaultBranch = Invoke-BBServerRestMethod -Connection $Connection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $defaultBranchConfig
-    
+
     $getCurrentBranch = Get-BBServerBranch -Connection $Connection -ProjectKey $ProjectKey -RepoName $RepoName -BranchName $BranchName
     return $getCurrentBranch
 }

@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Set-BBServerPullRequestSetting
 {
@@ -20,7 +7,7 @@ function Set-BBServerPullRequestSetting
 
     .DESCRIPTION
     The `Set-BBServerPullRequestSetting` function sets the specified pull request settings for a Bitbucket Server repository.
-    
+
     .EXAMPLE
     Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 2 -RequiredAllApprovers
 
@@ -49,11 +36,11 @@ function Set-BBServerPullRequestSetting
         [string]
         # The name of a specific repository.
         $RepoName,
-        
+
         [int]
         # The minimum number of users that must approve a pull request before it can be merged.
         $RequiredApprovers,
-        
+
         [boolean]
         # Whether or not all approvers must approve a pull request before it can be merged.
         $RequiredAllApprovers,
@@ -62,18 +49,18 @@ function Set-BBServerPullRequestSetting
         # Whether or not reviewers approvals will be removed if new commits are pushed or the pull request is retargeted to a different branch.
         $UnapproveOnUpdate
     )
-    
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
-    
+
     $resourcePath = ('projects/{0}/repos/{1}/settings/pull-requests' -f $ProjectKey, $RepoName)
     $pullRequestSettingConfig = @{}
-    
+
     if( $RequiredApprovers )
     {
         $pullRequestSettingConfig += @{ requiredApprovers = $RequiredApprovers }
     }
-    
+
     if( $MyInvocation.BoundParameters.ContainsKey('RequiredAllApprovers') )
     {
         if( $RequiredAllApprovers )
@@ -97,8 +84,8 @@ function Set-BBServerPullRequestSetting
             $pullRequestSettingConfig += @{ unapproveOnUpdate = $false }
         }
     }
-    
+
     $pullRequestSettings = Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath -InputObject $pullRequestSettingConfig
-    
+
     return $pullRequestSettings
 }

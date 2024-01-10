@@ -1,16 +1,3 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 function Get-BBServerFile
 {
@@ -22,7 +9,7 @@ function Get-BBServerFile
     The `Get-BBServerFile` function returns a list of all files in a Bitbucket Server repository.
 
     To get only files under part of a repository, pass its path to the `Path` parameter. The path should be relative to the root of the repository.
-    
+
     To search for files, use the `Filter` parameter. Pass it the path to a specific file, or a wildcard pattern that matches multiple files. `Get-BBServerFile` uses PowerShell's `-like` operator to do the comparison.
 
     Note that when using the `Path` parameter, the Bitbucket Server API treats that path as if it were the root of the repository. Paths returns will not have `Path` at the beginning of the path. Filters that include `Path` will not match anything.
@@ -72,12 +59,12 @@ function Get-BBServerFile
         # Only returns files whose paths match this filter. Wildcards are supported.
         $Filter
     )
-    
+
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
-    
+
     $resourcePath = ('projects/{0}/repos/{1}/files/{2}' -f $ProjectKey, $RepoName, $Path)
-    Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged | 
+    Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath -IsPaged |
         Where-Object {
             if( $Filter )
             {
