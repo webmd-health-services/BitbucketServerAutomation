@@ -88,7 +88,7 @@ $percentComplete = 1
 do
 {
     Write-Progress -Activity $currentActivity -Status $title -PercentComplete ($percentComplete++)
-    $result = Invoke-WebRequest -Uri $bbServerUri -Verbose:$false
+    $result = Invoke-WebRequest -Uri $bbServerUri -UseBasicParsing -Verbose:$false
     if( $result )
     {
         $status = $result.StatusCode
