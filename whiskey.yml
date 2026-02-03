@@ -1,21 +1,12 @@
-PublishOn:
- - main
- - prerelease
 
 Build:
 - Version:
     Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
 
-- GetPowerShellModule:
-    Name: Carbon
-    Version: 2.9.*
-
-- GetPowerShellModule:
-    Name: GitAutomation
-    Version: 0.14.*
+- PowerShell: prism install | Format-Table -Auto
 
 - MergeFile:
-    OnlyBy: BuildServer
+    .OnlyBy: BuildServer
     Path:
     - BitbucketServerAutomation\Functions\*.ps1
     DestinationPath: BitbucketServerAutomation\BitbucketServerAutomation.psm1
@@ -30,36 +21,19 @@ Build:
     ScriptBlock: Copy-Item -Path @('.\CHANGELOG.md', '.\README.md') -Destination '.\BitbucketServerAutomation'
 
 - Zip:
-    ArchivePath: .output\BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip
-    Path: 
+    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip
+    Path:
     - BitbucketServerAutomation
 
-Publish:
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip' -DeploymentName 'GitHub'
+  .OnlyBy: BuildServer
+
 - PublishPowerShellModule:
     Path: BitbucketServerAutomation
 
-- SetVariableFromPowerShellDataFile:
-    Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
-    Variables:
-        PrivateData:
-            PSData:
-                ReleaseNotes: RELEASE_NOTES
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
+  .OnlyBy: BuildServer
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [ 'PushArtifact',
-                '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip',
-                '-DeploymentName',
-                'GitHub' 
-    ]
-
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
+- Pester4:
+    Script: Tests\*.Tests.ps1
+    .Verbose: false

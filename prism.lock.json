@@ -1,0 +1,14 @@
+{
+    "PSModules":  [
+                      {
+                          "name":  "Carbon",
+                          "version":  "2.15.1",
+                          "repositorySourceLocation":  "https://www.powershellgallery.com/api/v2/"
+                      },
+                      {
+                          "name":  "GitAutomation",
+                          "version":  "0.14.0",
+                          "repositorySourceLocation":  "https://www.powershellgallery.com/api/v2/"
+                      }
+                  ]
+}
