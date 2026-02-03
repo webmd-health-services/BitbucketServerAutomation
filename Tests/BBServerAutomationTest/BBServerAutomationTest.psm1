@@ -127,7 +127,7 @@ function New-BBServerTestRepository
     New-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name (New-TestRepoName)
 }
 
-function New-BBServerTestConnection
+function New-BBServerTestSession
 {
     [CmdletBinding(DefaultParameterSetName='NoProject')]
     param(
@@ -151,7 +151,7 @@ function New-BBServerTestConnection
         throw ('The credential in ''{0}'' is not valid. Please delete this file, uninstall your local Bitbucket Server instance (with the Uninstall-BitbucketServer.ps1 PowerShell script in the root of the repository), and re-run init.ps1.')
     }
 
-    $conn = New-BBServerConnection -Credential $credential -Uri 'http://127.0.0.1:7990'
+    $conn = New-BBServerSession -Credential $credential -Url 'http://127.0.0.1:7990'
 
     if ($ProjectKey)
     {
@@ -161,45 +161,45 @@ function New-BBServerTestConnection
     return $conn
 }
 
+# TODO: remove once no more usages of New-BBServerTestConnection.
+Set-Alias -Name 'New-BBServerTestConnection' -Value 'New-BBServerTestSession'
+
 function Remove-BBServerTestRepository
 {
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Connection,
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [switch]
-        $Force
+        [switch] $Force
     )
 
-    Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection -Force:$Force
+    Get-BBServerRepository -Session $Session -ProjectKey $ProjectKey |
+        Remove-BBServerRepository -Session $Session -Force:$Force
 }
 
 function Remove-BBServerTestProject
 {
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Connection,
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
         [Parameter(Mandatory=$true)]
-        [string]
-        $Key,
+        [String] $Key,
 
-        [switch]
-        $Force
+        [switch] $Force
     )
 
-    Remove-BBServerTestRepository -Connection $Connection -ProjectKey $Key -Force:$Force
+    Remove-BBServerTestRepository -Session $Session -ProjectKey $Key -Force:$Force
 
-    $projectExists = (Get-BBServerProject -Connection $Connection | Where-Object { $_.key -eq $Key })
+    $projectExists = (Get-BBServerProject -Session $Session | Where-Object { $_.key -eq $Key })
     if ($projectExists)
     {
-        Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}' -f $Key)
+        Invoke-BBServerRestMethod -Session $Session -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}' -f $Key)
     }
 }
 

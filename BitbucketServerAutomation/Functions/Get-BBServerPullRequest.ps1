@@ -3,35 +3,35 @@ function Get-BBServerPullRequest
 {
     <#
     .SYNOPSIS
-    Gets pull requests
+    Gets pull requests.
 
     .DESCRIPTION
-    The `Get-BBServerPullRequest` function gets all pull requests in a Bitbucket Server instance. If you pass it an id, it will get just the pull request with that id.
-
+    The `Get-BBServerPullRequest` function gets all pull requests in a Bitbucket Server instance. If you pass it an id,
+    it will get just the pull request with that id.
 
     .EXAMPLE
-    Get-BBServerPullRequest  -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -id $ID
+    Get-BBServerPullRequest -Session $session -ProjectKey $projectKey -RepoName $repoName -ID $ID
+
+    Demonstrates how to get a specific pull request from a repository using the pull request ID.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [string]
         # The id of the pull request to get, if this is not included the default will be to get all current pull requests
-        $ID = "",
+        [String] $ID = "",
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of a specific repository.
-        $RepoName
+        [Parameter(Mandatory)]
+        [String] $RepoName
     )
 
     Set-StrictMode -Version 'Latest'
@@ -39,5 +39,5 @@ function Get-BBServerPullRequest
 
     $ResourcePath = ('projects/{0}/repos/{1}/pull-requests/{2}' -f $ProjectKey, $RepoName, $ID)
 
-    return Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $ResourcePath
+    return Invoke-BBServerRestMethod -Session $Session -Method Get -ApiName 'api' -ResourcePath $ResourcePath
 }

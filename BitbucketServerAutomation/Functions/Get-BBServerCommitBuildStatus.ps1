@@ -6,11 +6,14 @@ function Get-BBServerCommitBuildStatus
     Gets the build status of a commit.
 
     .DESCRIPTION
-    The `Get-BBServerCommitBuildStatus` function gets the build status for a specific commit. The commit ID is the full sha1 identifer Git uses to uniquely identify a commit, e.g. `e00cf62997a027bbf785614a93e2e55bb331d268`. There may be more than one status if a commit was built multiple times.
+    The `Get-BBServerCommitBuildStatus` function gets the build status for a specific commit. The commit ID is the full
+    sha1 identifer Git uses to uniquely identify a commit, e.g. `e00cf62997a027bbf785614a93e2e55bb331d268`. There may be
+    more than one status if a commit was built multiple times.
 
     The returned object(s) will have the following properties:
 
-    * `state`: Indicates whether the build passed, failed, or is in progress. Its value will be one of `SUCCESSFUL`, `INPROGRESS` or `FAILED`
+    * `state`: Indicates whether the build passed, failed, or is in progress. Its value will be one of `SUCCESSFUL`,
+      `INPROGRESS` or `FAILED`
     * `key`: A unique value that identifies the build. Usually only means something to the original build system.
     * `name`: The name of the build.
     * `url`: The URI to the build.
@@ -18,22 +21,22 @@ function Get-BBServerCommitBuildStatus
     * `dateAdded`: The date/time the status was added to Bitbucker Server.
 
     .EXAMPLE
-    Get-BBServerCommitBuildStatus -Connection $conn -CommitID 'e00cf62997a027bbf785614a93e2e55bb331d268'
+    Get-BBServerCommitBuildStatus -Session $conn -CommitID 'e00cf62997a027bbf785614a93e2e55bb331d268'
 
     Demonstrates how to get the build status for a commit.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The connection to the Bitbucket Server. Use `New-BBServerConnection` to create one.
-        $Connection,
+        # Which Bitbucket Server instance to use. Use `New-BBServerSession` to create a session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
+        # The ID of the commit. This is the full sha1 identifer Git uses to uniquely identify a commit, e.g.
+        # `e00cf62997a027bbf785614a93e2e55bb331d268`.
+        [Parameter(Mandatory)]
         [ValidateLength(1,255)]
-        [string]
-        # The ID of the commit. This is the full sha1 identifer Git uses to uniquely identify a commit, e.g. `e00cf62997a027bbf785614a93e2e55bb331d268`.
-        $CommitID
+        [String] $CommitID
     )
 
     Set-StrictMode -Version 'Latest'
@@ -41,7 +44,7 @@ function Get-BBServerCommitBuildStatus
 
     $epochStart = Get-Date -Year 1970 -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0 -Millisecond 0
 
-    Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $CommitID) |
+    Invoke-BBServerRestMethod -Session $Session -Method Get -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $CommitID) |
         Select-Object -ExpandProperty 'values' |
         Add-PSTypeName -CommitBuildStatusInfo |
         ForEach-Object { $_.dateAdded = $epochStart.AddSeconds(([double]$_.dateAdded) / 1000) ; $_ }

@@ -6,77 +6,83 @@ function Set-BBServerDefaultReviewer
     Updates an existing default reviewer pull request condition for a given project or repository.
 
     .DESCRIPTION
-    The `Set-BBServerDefaultReviewer` function updates the configuration of an existing default reviewer pull request condition for a project or repository. Only the condition parameters you pass to this function will be updated in the existing default reviewer condition, the rest of the parameters in the condition are left as-is.
+    The `Set-BBServerDefaultReviewer` function updates the configuration of an existing default reviewer pull request
+    condition for a project or repository. Only the condition parameters you pass to this function will be updated in
+    the existing default reviewer condition, the rest of the parameters in the condition are left as-is.
 
-    You must pass the `ID` of an existing default reviewer condition to this function (use `Get-BBServerDefaultReviewer` to get existing default reviewer conditions). If updating a default reviewer condition for a repository, you must also pass the name of the repository to the `RepositoryName` parameter.
+    You must pass the `ID` of an existing default reviewer condition to this function (use `Get-BBServerDefaultReviewer`
+    to get existing default reviewer conditions). If updating a default reviewer condition for a repository, you must
+    also pass the name of the repository to the `RepositoryName` parameter.
 
-    Pass Bitbucket Server user objects to the `User` parameter (use `Get-BBServerUser` to get user objects). Pass the number of required approvals to the `ApprovalCount` parameter (must be less than or equal to number of given `User` or the existing users configured in the condition).
+    Pass Bitbucket Server user objects to the `User` parameter (use `Get-BBServerUser` to get user objects). Pass the
+    number of required approvals to the `ApprovalCount` parameter (must be less than or equal to number of given `User`
+    or the existing users configured in the condition).
 
-    When `SourceBranchType`/`TargetBranchType` is `Model`, the `SourceBranchValue`/`TargetBranchValue` parameter argument **must** be one of: `Feature`, `Bugfix`, `Hotfix`, `Release`, `Development`, `Production`
+    When `SourceBranchType`/`TargetBranchType` is `Model`, the `SourceBranchValue`/`TargetBranchValue` parameter
+    argument **must** be one of: `Feature`, `Bugfix`, `Hotfix`, `Release`, `Development`, `Production`
 
     .EXAMPLE
-    Set-BBServerDefaultReviewer -Connection $conn -ProjectKey 'SBBSDR' -ID $existingCondition.id -ApprovalCount 2
+    Set-BBServerDefaultReviewer -Session $session -ProjectKey 'SBBSDR' -ID $existingCondition.id -ApprovalCount 2
 
     Demonstrates updating an existing default reviewer pull request condition to have a requried approval count of `2`.
 
     .EXAMPLE
-    Set-BBServerDefaultReviewer -Connection $conn -ProjectKey 'SBBSDR' -ID $existingCondition.id -User (Get-BBServerUser -Connection $conn -Filter 'admin') -ApprovalCount 1
+    Set-BBServerDefaultReviewer -Session $session -ProjectKey 'SBBSDR' -ID $existingCondition.id -User (Get-BBServerUser -Session $session -Filter 'admin') -ApprovalCount 1
 
-    Demonstrates updating an existing default reviewer pull request condition to only have the `admin` user and a required approval count of `1`.
-
-    .EXAMPLE
-    Set-BBServerDefaultReviewer -Connection $conn -ProjectKey 'SBBSDR' -ID $existingCondition.id -SourceBranchType 'Any' -TargetBranchType 'Name' -TargetBranchValue 'master'
-
-    Demonstrates updating an existing default reviewer condition to apply to any pull request that targets the `master` branch.
+    Demonstrates updating an existing default reviewer pull request condition to only have the `admin` user and a
+    required approval count of `1`.
 
     .EXAMPLE
-    Set-BBServerDefaultReviewer -Connection $conn -ProjectKey 'SBBSDR' -ID $existingCondition.id -SourceBranchType 'Pattern' -SourceBranchValue 'hotfix/*' -TargetBranchType 'Model' -TargetBranchValue 'Production'
+    Set-BBServerDefaultReviewer -Session $session -ProjectKey 'SBBSDR' -ID $existingCondition.id -SourceBranchType 'Any' -TargetBranchType 'Name' -TargetBranchValue 'master'
 
-    Demonstrates updating an existing default reviewer condition to apply to any pull request that originates on a branch matching the pattern `hotfix/*` and targets the configured `Production` model branch.
+    Demonstrates updating an existing default reviewer condition to apply to any pull request that targets the `master`
+    branch.
+
+    .EXAMPLE
+    Set-BBServerDefaultReviewer -Session $session -ProjectKey 'SBBSDR' -ID $existingCondition.id -SourceBranchType 'Pattern' -SourceBranchValue 'hotfix/*' -TargetBranchType 'Model' -TargetBranchValue 'Production'
+
+    Demonstrates updating an existing default reviewer condition to apply to any pull request that originates on a
+    branch matching the pattern `hotfix/*` and targets the configured `Production` model branch.
     #>
     param(
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
         [Parameter(Mandatory)]
-        [object]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting. Use `New-BBServerConnection` to create connection objects.
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory)]
-        [string]
         # The key/ID that identifies the project. This is *not* the project name.
-        $ProjectKey,
-
         [Parameter(Mandatory)]
-        [int]
-        # The ID of the default reviewer condition. Use `Get-BBServerDefaultReviewer` to get the ID of an existing condition.
-        $ID,
+        [String] $ProjectKey,
 
-        [int]
+        # The ID of the default reviewer condition. Use `Get-BBServerDefaultReviewer` to get the ID of an existing
+        # condition.
+        [Parameter(Mandatory)]
+        [int] $ID,
+
         # The number of default reviewers that must approve a pull request.
-        $ApprovalCount,
+        [int] $ApprovalCount,
 
-        [string]
         # The name of a repository in the project.
-        $RepositoryName,
+        [String] $RepositoryName,
 
-        [ValidateSet('Any', 'Name', 'Pattern', 'Model')]
         # The type of matching to do against the source branch.
+        [ValidateSet('Any', 'Name', 'Pattern', 'Model')]
         $SourceBranchType,
 
-        [string]
         # Specifies the value or pattern to match a source branch, if `-SourceBranchType` is not "Any".
-        $SourceBranchValue,
+        [String] $SourceBranchValue,
 
-        [ValidateSet('Any', 'Name', 'Pattern', 'Model')]
         # The type of matching to do against the target branch.
+        [ValidateSet('Any', 'Name', 'Pattern', 'Model')]
         $TargetBranchType,
 
-        [string]
         # Specifies the value or pattern to match a target branch, if `-TargetBranchType` is not "Any".
-        $TargetBranchValue,
+        [String] $TargetBranchValue,
 
-        [object[]]
-        # Collection of objects representing the users to add to the default reviewer condition. Use `Get-BBServerUser` to get Bitbucket Server user objects.
-        $User
+        # Collection of objects representing the users to add to the default reviewer condition. Use `Get-BBServerUser`
+        # to get Bitbucket Server user objects.
+        [Object[]] $User
     )
 
     Set-StrictMode -Version 'Latest'
@@ -118,7 +124,7 @@ function Set-BBServerDefaultReviewer
     }
 
     $existingCondition =
-        Get-BBServerDefaultReviewer -Connection $Connection -ProjectKey $ProjectKey @repositoryParam |
+        Get-BBServerDefaultReviewer -Session $Session -ProjectKey $ProjectKey @repositoryParam |
         Where-Object { $_ } |
         Where-Object { $_.id -eq $ID }
 
@@ -188,5 +194,5 @@ function Set-BBServerDefaultReviewer
     }
     $resourcePath = '{0}/condition/{1}' -f $resourcePath, $ID
 
-    $requestBody | Invoke-BBServerRestMethod -Connection $Connection -Method Put -ApiName 'default-reviewers' -ResourcePath $resourcePath
+    $requestBody | Invoke-BBServerRestMethod -Session $Session -Method Put -ApiName 'default-reviewers' -ResourcePath $resourcePath
 }

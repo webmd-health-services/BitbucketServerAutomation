@@ -2,17 +2,18 @@
 function Find-BBServerRepository
 {
     param(
-        [parameter(Mandatory=$true)]
-        [Object]
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
         # Name of a Repository you wish to find. supports Wildcards.
-        [String]
-        $Name
+        [String] $Name
     )
-    Get-BBServerProject -Connection $Connection |
+    Get-BBServerProject -Session $Session |
         ForEach-Object {
-            return Get-BBServerRepository -Connection $Connection -ProjectKey $_.key |
+            return Get-BBServerRepository -Session $Session -ProjectKey $_.key |
                 where-Object { $_.name -like $Name }
         }
 }

@@ -3,6 +3,18 @@
 
 # BitbucketServerAutomation Changelog
 
+## 1.2.0
+
+### Added
+
+* `New-BBServerSession` function to replace `New-BBServerConnection`.
+* `Session` parameter on all functions to replace `Connection` parameter.
+
+### Deprecated
+
+* `New-BBServerConnection`. Use `New-BBServerSession` instead.
+* `Connection` parameter on all functions. Use `Session` parameter instead.
+
 ## 1.1.1
 
 > Released 10 Jan 2024

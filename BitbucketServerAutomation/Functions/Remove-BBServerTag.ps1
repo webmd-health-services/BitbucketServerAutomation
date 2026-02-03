@@ -6,29 +6,34 @@ function Remove-BBServerTag
     Removes specified tags from a repository in Bitbucket Server.
 
     .DESCRIPTION
-    The `Remove-BBServerTag` function takes an array of git tags and removes them from the specified Bitbucket Server repository. If any of the requested tags do not exist on the server, an error is thrown.
+    The `Remove-BBServerTag` function takes an array of git tags and removes them from the specified Bitbucket Server
+    repository. If any of the requested tags do not exist on the server, an error is thrown.
 
     .EXAMPLE
-    Remove-BBServerTag -Connection $conn -ProjectKey $key -RepositoryKey $repoName -TagName $tag.displayId
+    Remove-BBServerTag -Session $session -ProjectKey $key -RepositoryKey $repoName -TagName $tag.displayId
 
     Demonstrates how to remove the git tag for the associated repo
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSShouldProcess', '')]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory=$true)]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        [object]$Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
         # The key of the repository's project.
-        [String]$ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
         # The key of the repository.
-        [String]$RepositoryKey,
+        [Parameter(Mandatory)]
+        [String] $RepositoryKey,
 
-        [Parameter(Mandatory=$true)]
         # The name of the tag to be deleted.
-        [String[]]$TagName
+        [Parameter(Mandatory)]
+        [String[]] $TagName
     )
 
     Set-StrictMode -Version 'Latest'
@@ -36,7 +41,7 @@ function Remove-BBServerTag
 
     foreach( $tag in $TagName )
     {
-        Invoke-BBServerRestMethod -Connection $Connection -Method DELETE -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags/{2}' -f $ProjectKey, $RepositoryKey, $tag)
+        Invoke-BBServerRestMethod -Session $Session -Method DELETE -ApiName 'git' -ResourcePath ('projects/{0}/repos/{1}/tags/{2}' -f $ProjectKey, $RepositoryKey, $tag)
     }
 }
 

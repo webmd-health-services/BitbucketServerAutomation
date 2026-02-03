@@ -8,33 +8,32 @@ function Rename-BBServerRepository
     .DESCRIPTION
     The `Rename-BBServerRepository` renames a repository in Bitbucket Server.
 
-    Use the `New-BBServerConnection` function to create a connection object to pass to the `Connection` parameter.
+    Use the `New-BBServerSession` function to create a session object to pass to the `Session` parameter.
 
     .EXAMPLE
-    Rename-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -RepoName 'fubarsnafu' -TargetRepoName 'snafu_fubar'
+    Rename-BBServerRepository -Session $session -ProjectKey 'BBSA' -RepoName 'fubarsnafu' -TargetRepoName 'snafu_fubar'
 
     Demonstrates how to rename a repository from 'fubarsnafu' to 'snafu_fubar'.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The connection information that describe what Bitbucket Server instance to connect to, what credentials to use, etc. Use the `New-BBServerConnection` function to create a connection object.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository currently resides. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
-        [object]
         # The name of a specific repository to rename.
-        $RepoName,
+        [Parameter(Mandatory)]
+        [Object] $RepoName,
 
-        [Parameter(Mandatory=$true)]
         # The target name that the repository will be renamed to.
-        $TargetRepoName
+        [Parameter(Mandatory)]
+        [String] $TargetRepoName
     )
 
     Set-StrictMode -Version 'Latest'
@@ -42,7 +41,7 @@ function Rename-BBServerRepository
 
     $resourcePath = ('projects/{0}/repos/{1}' -f $ProjectKey, $RepoName)
 
-    $getRepos = Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey
+    $getRepos = Get-BBServerRepository -Session $Session -ProjectKey $ProjectKey
 
     $currentRepo = $getRepos | Where-Object { $_.name -eq $RepoName }
     if( !$currentRepo )
@@ -59,7 +58,7 @@ function Rename-BBServerRepository
     }
 
     $repoRenameConfig = @{ name = $TargetRepoName }
-    $setRepoName = Invoke-BBServerRestMethod -Connection $Connection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $repoRenameConfig
+    $setRepoName = Invoke-BBServerRestMethod -Session $Session -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $repoRenameConfig
 
     return $setRepoName
 }

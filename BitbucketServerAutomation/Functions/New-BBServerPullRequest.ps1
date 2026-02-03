@@ -2,30 +2,31 @@
 function New-BBServerPullRequest
 {
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        $Connection,
-        [Parameter(Mandatory=$true)]
-        [string]
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
+
         # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
-        $ProjectKey,
-        [Parameter(Mandatory=$true)]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
+
         # The name of a specific repository.
-        $RepoName,
-        [Parameter(Mandatory=$true)]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $RepoName,
+
         # The name of the branch that you wish to merge from
-        $From,
-        [Parameter(Mandatory=$true)]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $From,
+
         # The name of destination branch
-        $To,
-        [Parameter(Mandatory=$true)]
-        [string]
+        [Parameter(Mandatory)]
+        [String] $To,
+
         # The title of the pull request you wish to create, this cannot be blank.
-        $Title
+        [Parameter(Mandatory)]
+        [String] $Title
     )
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState
@@ -62,5 +63,5 @@ function New-BBServerPullRequest
     };
     $ResourcePath = ('projects/{0}/repos/{1}/pull-requests' -f $ProjectKey, $RepoName)
 
-    return $Body | Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $ResourcePath
+    return $Body | Invoke-BBServerRestMethod -Session $Session -Method 'POST' -ApiName 'api' -ResourcePath $ResourcePath
 }

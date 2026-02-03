@@ -6,20 +6,20 @@ function Invoke-BBServerRestMethod
     Calls a method in the Bitbucket Server REST API.
 
     .DESCRIPTION
-    The `Invoke-BBServerRestMethod` function calls a method on the Bitbucket Server REST API. You pass it a Connection
-    object (returned from `New-BBServerConnection`), the HTTP method to use, the name of API (via the `ApiName`
-    parametr), the name/path of the resource via the `ResourcePath` parameter, and a hashtable/object/psobject via the
+    The `Invoke-BBServerRestMethod` function calls a method on the Bitbucket Server REST API. You pass it a Session
+    object (returned from `New-BBServerSession`), the HTTP method to use, the name of API (via the `ApiName` parametr),
+    the name/path of the resource via the `ResourcePath` parameter, and a hashtable/object/psobject via the
     `InputObject` parameter representing the data to send in the body of the request. The data is converted to JSON and
     sent in the body of the request.
 
-    A Bitbucket Server URI has the form `https://example.com/rest/API_NAME/API_VERSION/RESOURCE_PATH`. `API_VERSION` is
-    taken from the connection object passed to the `Connection` parameter. The `API_NAME` path should be passed to the
-    `ApiName` paramter. The `RESOURCE_PATH` path should be passed to the `ResourcePath` parameter. The base URI is taken
-    from the `Uri` property of the connection object passed to the `Connection` parameter. If you want the raw text
-    content from the API back instead of an object, use the `-Raw` switch.
+    A Bitbucket Server URL has the form `https://example.com/rest/API_NAME/API_VERSION/RESOURCE_PATH`. `API_VERSION` is
+    taken from the session passed to the `Session` parameter. The `API_NAME` path should be passed to the `ApiName`
+    paramter. The `RESOURCE_PATH` path should be passed to the `ResourcePath` parameter. The base URL is taken from the
+    `Url` property of the session object passed to the `Session` parameter. If you want the raw text content from the
+    API back instead of an object, use the `-Raw` switch.
 
     .EXAMPLE
-    $body | Invoke-BBServerRestMethod -Connection $Connection -Method Post -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $commitID)
+    $body | Invoke-BBServerRestMethod -Session $Session -Method Post -ApiName 'build-status' -ResourcePath ('commits/{0}' -f $commitID)
 
     Demonstrates how to call the /build-status API's `/commits/COMMIT_ID` resource. Body is a hashtable that looks like
     this:
@@ -35,30 +35,32 @@ function Invoke-BBServerRestMethod
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        # The connection to use to invoke the REST method.
-        [Parameter(Mandatory=$true)]
-        [object] $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Microsoft.PowerShell.Commands.WebRequestMethod]
         $Method,
 
-        # The name of the API being invoked, e.g. `projects`, `build-status`, etc. If the endpoint URI is
+        # The name of the API being invoked, e.g. `projects`, `build-status`, etc. If the endpoint URL is
         # `http://example.com/rest/build-status/1.0/commits`, the API name is between the `rest` and API version, which
         # in this example is `build-status`.
-        [Parameter(Mandatory,ParameterSetName='SimpleUri')]
-        [string] $ApiName,
+        [Parameter(Mandatory ,ParameterSetName='SimpleUrl')]
+        [String] $ApiName,
 
-        # The path to the resource to use. If the endpoint URI `http://example.com/rest/build-status/1.0/commits`, the
+        # The path to the resource to use. If the endpoint URL `http://example.com/rest/build-status/1.0/commits`, the
         # ResourcePath is everything after the API version. In this case, the resource path is `commits`.
-        [Parameter(Mandatory,ParameterSetName='SimpleUri')]
-        [string] $ResourcePath,
+        [Parameter(Mandatory, ParameterSetName='SimpleUrl')]
+        [String] $ResourcePath,
 
-        [Parameter(Mandatory,ParameterSetName='FullPath')]
+        [Parameter(Mandatory, ParameterSetName='FullPath')]
         [String] $Path,
 
-        [Parameter(ValueFromPipeline=$true)]
-        [object] $InputObject,
+        [Parameter(ValueFromPipeline)]
+        [Object] $InputObject,
 
         # Hashtable representing the request query parameters to include when calling the API resource.
         [hashtable] $Parameter,
@@ -74,9 +76,9 @@ function Invoke-BBServerRestMethod
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    if( $PSCmdlet.ParameterSetName -eq 'SimpleUri' )
+    if( $PSCmdlet.ParameterSetName -eq 'SimpleUrl' )
     {
-        $Path = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Connection.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
+        $Path = 'rest/{0}/{1}/{2}' -f $ApiName.Trim('/'),$Session.ApiVersion.Trim('/'),$ResourcePath.Trim('/')
     }
 
     if ($Parameter)
@@ -84,14 +86,28 @@ function Invoke-BBServerRestMethod
         $requestQueryParameter = ''
         foreach ($key in $Parameter.Keys)
         {
-            $requestQueryParameter += '&{0}={1}' -f [uri]::EscapeDataString($key), [uri]::EscapeDataString($Parameter[$key])
+            $requestQueryParameter += '&{0}={1}' -f [Uri]::EscapeDataString($key), [Uri]::EscapeDataString($Parameter[$key])
         }
 
         $requestQueryParameter = $requestQueryParameter.TrimStart('&')
         $Path = '{0}?{1}' -f $Path, $requestQueryParameter
     }
 
-    $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$Path
+    [Uri] $sessionUrl = $Session | Select-Object -Expand 'Url' -ErrorAction Ignore
+    if (-not $sessionUrl)
+    {
+        $sessionUrl = $Session | Select-Object -Expand 'Uri' -ErrorAction Ignore
+
+        if (-not $sessionUrl)
+        {
+            $msg = 'Unable to make a request to Bitbucket Server because the session object is missing a `Url` ' +
+                   'property. Did you use `New-BBServerSession` to create a session?'
+            Write-Error -Message $msg -ErrorAction $ErrorActionPreference
+            return
+        }
+    }
+
+    $url = [Uri]::New($sessionUrl, $Path)
 
     $bodyParam = @{ }
     if( $InputObject )
@@ -100,13 +116,13 @@ function Invoke-BBServerRestMethod
     }
 
     #$DebugPreference = 'Continue'
-    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(), $uri)
+    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(), $url)
     if( $bodyParam['Body'] )
     {
         Write-Debug -Message $bodyParam['Body']
     }
 
-    $credential = $Connection.Credential
+    $credential = $Session.Credential
     $credential = '{0}:{1}' -f $credential.UserName,$credential.GetNetworkCredential().Password
 
     $authHeaderValue = 'Basic {0}' -f [Convert]::ToBase64String( [Text.Encoding]::UTF8.GetBytes($credential) )
@@ -133,10 +149,15 @@ function Invoke-BBServerRestMethod
                     $queryStringSeparator = '?'
                 }
 
-                $uriPagedPath = ('{0}{1}limit={2}&start={3}' -f $Path, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
-                $uri = New-Object 'Uri' -ArgumentList $Connection.Uri,$uriPagedPath
+                $urlPagedPath = ('{0}{1}limit={2}&start={3}' -f $Path, $queryStringSeparator, [int16]::MaxValue, $nextPageStart)
+                $url = [Uri]::New($sessionUrl, $urlPagedPath)
 
-                $getStream = Invoke-RestMethod -Method $Method -Uri $uri -Headers $headers -ContentType 'application/json' @bodyParam -ErrorVariable 'errors'
+                $getStream = Invoke-RestMethod -Method $Method `
+                                               -Uri $url `
+                                               -Headers $headers `
+                                               -ContentType 'application/json' `
+                                               @bodyParam `
+                                               -ErrorVariable 'errors'
                 if( $getStream.isLastPage -eq $false )
                 {
                     $nextPageStart = $getStream.nextPageStart
@@ -164,10 +185,10 @@ function Invoke-BBServerRestMethod
                 $invokeArgs['UseBasicParsing'] = $true
             }
 
-            if ($Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($uri,$method))
+            if ($Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get -or $PSCmdlet.ShouldProcess($url,$method))
             {
                 $response = & $cmdName -Method $Method `
-                                       -Uri $uri `
+                                       -Uri $url `
                                        -Headers $headers `
                                        -ContentType $ContentType `
                                        @bodyParam `

@@ -6,47 +6,47 @@ function Get-BBServerPullRequestSetting
     Gets a list of pull request settings from a repository.
 
     .DESCRIPTION
-    The `Get-BBServerPullRequestSetting` function returns a list of all pull request settings in a Bitbucket Server repository.
+    The `Get-BBServerPullRequestSetting` function returns a list of all pull request settings in a Bitbucket Server
+    repository.
 
-    If you pass a setting name, the function will only return the information for the named setting. It will return an error if no setting exists that match the search criteria.
+    If you pass a setting name, the function will only return the information for the named setting. It will return an
+    error if no setting exists that match the search criteria.
 
     .EXAMPLE
-    Get-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo'
+    Get-BBServerPullRequestSetting -Session $session -ProjectKey 'TestProject' -RepoName 'TestRepo'
 
     Demonstrates how to get all pull request settings in the `TestRepo` repository.
 
     .EXAMPLE
-    Get-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -SettingName 'RequiredApprovers'
+    Get-BBServerPullRequestSetting -Session $session -ProjectKey 'TestProject' -RepoName 'TestRepo' -SettingName 'RequiredApprovers'
 
     Demonstrates how to get `RequiredApprovers` setting in the `TestRepo` repository.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository resides. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of a specific repository.
-        $RepoName,
+        [Parameter(Mandatory)]
+        [String] $RepoName,
 
-        [string]
         # The name of the pull request setting to retrieve. When omitted, all settings are returned.
-        $SettingName
+        [String] $SettingName
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
     $resourcePath = ('projects/{0}/repos/{1}/settings/pull-requests' -f $ProjectKey, $RepoName)
-    $pullRequestSettings = Invoke-BBServerRestMethod -Connection $Connection -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath
+    $pullRequestSettings = Invoke-BBServerRestMethod -Session $Session -Method 'GET' -ApiName 'api' -ResourcePath $resourcePath
 
     if( $SettingName )
     {

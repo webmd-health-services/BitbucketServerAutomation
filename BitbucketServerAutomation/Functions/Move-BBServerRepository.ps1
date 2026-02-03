@@ -8,33 +8,33 @@ function Move-BBServerRepository
     .DESCRIPTION
     The `Move-BBServerRepository` moves a repository in Bitbucket Server.
 
-    Use the `New-BBServerConnection` function to create a connection object to pass to the `Connection` parameter.
+    Use the `New-BBServerSession` function to create a Session object to pass to the `Session` parameter.
 
     .EXAMPLE
-    Move-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -RepoName 'fubarsnafu' -TargetProjectKey 'BBSA_NEW'
+    Move-BBServerRepository -Session $session -ProjectKey 'BBSA' -RepoName 'fubarsnafu' -TargetProjectKey 'BBSA_NEW'
 
     Demonstrates how to move the repository 'fubarsnafu' from the 'BBSA' project to the 'BBSA_NEW'
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The connection information that describe what Bitbucket Server instance to connect to, what credentials to use, etc. Use the `New-BBServerConnection` function to create a connection object.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository currently resides. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
-        [object]
         # The name of a specific repository to move to the new project.
-        $RepoName,
+        [Parameter(Mandatory)]
+        [Object] $RepoName,
 
-        [Parameter(Mandatory=$true)]
-        # The key/ID that identifies the target project where the repository will be moved. This is *not* the project name.
-        $TargetProjectKey
+        # The key/ID that identifies the target project where the repository will be moved. This is *not* the project
+        # name.
+        [Parameter(Mandatory)]
+        [String] $TargetProjectKey
     )
 
     Set-StrictMode -Version 'Latest'
@@ -42,7 +42,7 @@ function Move-BBServerRepository
 
     $resourcePath = ('projects/{0}/repos/{1}' -f $ProjectKey, $RepoName)
 
-    $getProjects = Get-BBServerProject -Connection $Connection
+    $getProjects = Get-BBServerProject -Session $Session
 
     $currentProject = $getProjects | Where-Object { $_.key -eq $ProjectKey }
     if( !$currentProject )
@@ -58,7 +58,7 @@ function Move-BBServerRepository
         return
     }
 
-    $currentRepo = Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey | Where-Object { $_.name -eq $RepoName }
+    $currentRepo = Get-BBServerRepository -Session $Session -ProjectKey $ProjectKey | Where-Object { $_.name -eq $RepoName }
     if( !$currentRepo )
     {
         Write-Error -Message ('A repository with name ''{0}'' does not exist in the project ''{1}''. Specified respository cannot be moved.' -f $RepoName, $ProjectKey)
@@ -66,7 +66,7 @@ function Move-BBServerRepository
     }
 
     $repoProjectConfig = @{ project = @{ key = $TargetProjectKey } }
-    $setRepoProject = Invoke-BBServerRestMethod -Connection $Connection -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $repoProjectConfig
+    $setRepoProject = Invoke-BBServerRestMethod -Session $Session -Method 'PUT' -ApiName 'api' -ResourcePath $resourcePath -InputObject $repoProjectConfig
 
     return $setRepoProject
 }
