@@ -1,201 +1,214 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+BeforeAll {
+    Set-StrictMode -Version 'Latest'
 
-$sourceProjectKey = 'SMOVEBBSR'
-$targetProjectKey = 'TMOVEBBSR'
-$repoName = $null
-$bbConnection = New-BBServerTestConnection -ProjectKey $sourceProjectKey -ProjectName 'Move-BBServerRepository Tests - Source'
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
 
-function Init
-{
-    $script:repoName = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $sourceProjectKey | Select-Object -ExpandProperty 'name'
+    $script:sourceProjectKey = 'SMOVEBBSR'
+    $script:targetProjectKey = 'TMOVEBBSR'
+    $script:repoName = $null
+    $script:session = New-BBServerTestSession -ProjectKey $script:sourceProjectKey `
+                                              -ProjectName 'Move-BBServerRepository Tests - Source'
 
-    # $DebugPreference = 'Continue'
-    Write-Debug -Message ('Project: {0}' -f $sourceProjectKey)
-    Write-Debug -message ('Repository: {0}' -f $repoName)
-}
-
-function GivenASourceProject
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $ProjectKey,
-
-        [string]
-        $WithRepo
-    )
-
-    $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithRepo -ErrorAction Ignore
-    if ( !$getRepo )
+    function GivenASourceProject
     {
-        New-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithRepo | Out-Null
-    }
-}
+        [CmdletBinding()]
+        param(
+            [string]
+            $ProjectKey,
 
-function GivenATargetProject
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $ProjectKey,
+            [string]
+            $WithRepo
+        )
 
-        [string]
-        $WithNoRepo,
-
-        [string]
-        $WithRepo
-    )
-
-    if( $WithNoRepo )
-    {
-        $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithNoRepo -ErrorAction Ignore
-        if ( $getRepo )
-        {
-            Remove-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithNoRepo -Force
-        }
-    }
-    
-    $getProject = Get-BBServerProject -Connection $bbConnection -Name 'Move-BBServerRepository Tests - Target' -ErrorAction Ignore
-    if ( !$getProject )
-    {
-        New-BBServerProject -Connection $bbConnection -Key $ProjectKey -Name 'Move-BBServerRepository Tests - Target'
-    }
-
-    if( $WithRepo )
-    {
-        $getRepo = Get-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithRepo -ErrorAction Ignore
+        $getRepo =
+            Get-BBServerRepository -Session $script:session -ProjectKey $ProjectKey -Name $WithRepo -ErrorAction Ignore
         if ( !$getRepo )
         {
-            New-BBServerRepository -Connection $bbConnection -ProjectKey $ProjectKey -Name $WithRepo | Out-Null
+            New-BBServerRepository -Session $script:session -ProjectKey $ProjectKey -Name $WithRepo | Out-Null
         }
     }
-}
 
-function WhenMovingRepositoryBetweenProjects
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $SourceProjectKey,
-
-        [string]
-        $TargetProjectKey,
-
-        [string]
-        $Repo
-    )
-
-    $Global:Error.Clear()
-
-    $moveBBServerRepo = Move-BBServerRepository -Connection $bbConnection -ProjectKey $SourceProjectKey -RepoName $Repo -TargetProjectKey $TargetProjectKey -ErrorAction SilentlyContinue
-}
-
-function ThenErrors
-{
-    [CmdletBinding()]
-    param(
-        [switch]
-        $ShouldNotBeThrown,
-
-        [string]
-        $ShouldBeThrown
-    )
-
-    if( $ShouldNotBeThrown )
+    function GivenATargetProject
     {
-        It 'should not throw any errors' {
-            $Global:Error | Should BeNullOrEmpty
+        [CmdletBinding()]
+        param(
+            [string]
+            $ProjectKey,
+
+            [string]
+            $WithNoRepo,
+
+            [string]
+            $WithRepo
+        )
+
+        if( $WithNoRepo )
+        {
+            $getRepo = Get-BBServerRepository -Session $script:session `
+                                              -ProjectKey $ProjectKey `
+                                              -Name $WithNoRepo `
+                                              -ErrorAction Ignore
+            if ( $getRepo )
+            {
+                Remove-BBServerRepository -Session $script:session -ProjectKey $ProjectKey -Name $WithNoRepo -Force
+            }
+        }
+
+        $getProject = Get-BBServerProject -Session $script:session `
+                                          -Name 'Move-BBServerRepository Tests - Target' `
+                                          -ErrorAction Ignore
+        if ( !$getProject )
+        {
+            New-BBServerProject -Session $script:session -Key $ProjectKey -Name 'Move-BBServerRepository Tests - Target'
+        }
+
+        if( $WithRepo )
+        {
+            $getRepo = Get-BBServerRepository -Session $script:session `
+                                              -ProjectKey $ProjectKey `
+                                              -Name $WithRepo `
+                                              -ErrorAction Ignore
+            if ( !$getRepo )
+            {
+                New-BBServerRepository -Session $script:session -ProjectKey $ProjectKey -Name $WithRepo | Out-Null
+            }
         }
     }
 
-    if( $ShouldBeThrown )
+    function WhenMovingRepositoryBetweenProjects
     {
-        It ('should throw an error: ''{0}''' -f $ShouldBeThrown) {
-            $Global:Error | Should Match $ShouldBeThrown
+        [CmdletBinding()]
+        param(
+            [String] $SourceProjectKey,
+
+            [String] $TargetProjectKey,
+
+            [String] $Repo
+        )
+
+        $Global:Error.Clear()
+
+        Move-BBServerRepository -Session $script:session `
+                                -ProjectKey $SourceProjectKey `
+                                -RepoName $Repo `
+                                -TargetProjectKey $TargetProjectKey `
+                                -ErrorAction SilentlyContinue
+    }
+
+    function ThenErrors
+    {
+        [CmdletBinding()]
+        param(
+            [switch] $ShouldNotBeThrown,
+
+            [string] $ShouldBeThrown
+        )
+
+        if( $ShouldNotBeThrown )
+        {
+            $Global:Error | Should -BeNullOrEmpty
+        }
+
+        if( $ShouldBeThrown )
+        {
+            $Global:Error | Should -Match $ShouldBeThrown
         }
     }
-}
 
-function ThenRepositoryShouldHaveMoved
-{
-    [CmdletBinding()]
-    param(
-    )
+    function ThenRepositoryShouldHaveMoved
+    {
+        [CmdletBinding()]
+        param(
+        )
 
-    It 'the specified repository should exist in the target project' {
-        Get-BBServerRepository -Connection $bbConnection -ProjectKey $targetProjectKey -Name $repoName | Should Not BeNullOrEmpty
+        Get-BBServerRepository -Session $script:session -ProjectKey $script:targetProjectKey -Name $script:repoName |
+            Should -Not -BeNullOrEmpty
+
+        Get-BBServerRepository -Session $script:session `
+                               -ProjectKey $script:sourceProjectKey `
+                               -Name $script:repoName `
+                               -ErrorAction Ignore |
+            Should -BeNullOrEmpty
     }
 
-    It 'the specified repository should no longer exist in the original project' {
-        Get-BBServerRepository -Connection $bbConnection -ProjectKey $sourceProjectKey -Name $repoName -ErrorAction Ignore | Should BeNullOrEmpty
+    function ThenRepositoryShouldNotHaveMoved
+    {
+        [CmdletBinding()]
+        param(
+        )
+
+        Get-BBServerRepository -Session $script:session `
+                               -ProjectKey $script:sourceProjectKey `
+                               -Name $script:repoName `
+                               -ErrorAction Ignore |
+            Should -Not -BeNullOrEmpty
     }
 }
 
-function ThenRepositoryShouldNotHaveMoved
-{
-    [CmdletBinding()]
-    param(
-    )
+Describe 'Move-BBServerRepository' {
+    BeforeEach {
+        $script:repoName =
+            New-BBServerTestRepository -Session $script:session -ProjectKey $script:sourceProjectKey |
+            Select-Object -ExpandProperty 'name'
 
-    It 'the specified repository should still exist in the original project' {
-        Get-BBServerRepository -Connection $bbConnection -ProjectKey $sourceProjectKey -Name $repoName -ErrorAction Ignore | Should Not BeNullOrEmpty
+        # $DebugPreference = 'Continue'
+        Write-Debug -Message ('Project: {0}' -f $script:sourceProjectKey)
+        Write-Debug -message ('Repository: {0}' -f $script:repoName)
     }
-}
 
-Describe 'Move-BBServerRepository.when moving a repository between two projects' {
-    Init
-    GivenASourceProject $sourceProjectKey -WithRepo $repoName
-    GivenATargetProject $targetProjectKey -WithNoRepo $repoName
-    WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo $repoName
-    ThenErrors -ShouldNotBeThrown
-    ThenRepositoryShouldHaveMoved
-}
+    It 'moves a repository between two projects' {
+        GivenASourceProject $script:sourceProjectKey -WithRepo $script:repoName
+        GivenATargetProject $script:targetProjectKey -WithNoRepo $script:repoName
+        WhenMovingRepositoryBetweenProjects -SourceProjectKey $script:sourceProjectKey `
+                                            -TargetProjectKey $script:targetProjectKey `
+                                            -Repo $script:repoName
+        ThenErrors -ShouldNotBeThrown
+        ThenRepositoryShouldHaveMoved
+    }
 
-Describe 'Move-BBServerRepository.when repository with same name already exists in target project' {
-    Init
-    GivenASourceProject $sourceProjectKey -WithRepo $repoName
-    GivenATargetProject $targetProjectKey -WithRepo $repoName
-    WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo $repoName
-    ThenErrors -ShouldBeThrown ('This repository URL is already taken by ''{0}''.' -f $repoName)
-    ThenRepositoryShouldNotHaveMoved
-}
+    It 'validates target repository does not exist' {
+        GivenASourceProject $script:sourceProjectKey -WithRepo $script:repoName
+        GivenATargetProject $script:targetProjectKey -WithRepo $script:repoName
+        WhenMovingRepositoryBetweenProjects -SourceProjectKey $script:sourceProjectKey `
+                                            -TargetProjectKey $script:targetProjectKey `
+                                            -Repo $script:repoName
+        ThenErrors -ShouldBeThrown ('This repository URL is already taken by ''{0}''.' -f $script:repoName)
+        ThenRepositoryShouldNotHaveMoved
+    }
 
-Describe 'Move-BBServerRepository.when specified source project does not exist' {
-    Init
-    GivenATargetProject $targetProjectKey -WithRepo $repoName
-    WhenMovingRepositoryBetweenProjects -SourceProjectKey 'Non-existent Project' -TargetProjectKey $targetProjectKey -Repo $repoName
-    ThenErrors -ShouldBeThrown 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot be moved.'
-}
+    It 'validates source project exists' {
+        GivenATargetProject $script:targetProjectKey -WithRepo $script:repoName
+        WhenMovingRepositoryBetweenProjects -SourceProjectKey 'Non-existent Project' `
+                                            -TargetProjectKey $script:targetProjectKey `
+                                            -Repo $script:repoName
+        $expectedMsg = 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot ' +
+                       'be moved.'
+        ThenErrors -ShouldBeThrown $expectedMsg
+    }
 
-Describe 'Move-BBServerRepository.when specified target project does not exist' {
-    Init
-    GivenASourceProject $sourceProjectKey -WithRepo $repoName
-    WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey 'Non-existent Project' -Repo $repoName
-    ThenErrors -ShouldBeThrown 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot be moved.'
-    ThenRepositoryShouldNotHaveMoved
-}
+    It 'validates destination project exists' {
+        GivenASourceProject $script:sourceProjectKey -WithRepo $script:repoName
+        WhenMovingRepositoryBetweenProjects -SourceProjectKey $script:sourceProjectKey `
+                                            -TargetProjectKey 'Non-existent Project' `
+                                            -Repo $script:repoName
+        $expectedMsg = 'A project with key/ID ''Non-existent Project'' does not exist. Specified repository cannot ' +
+                       'be moved.'
+        ThenErrors -ShouldBeThrown $expectedMsg
+        ThenRepositoryShouldNotHaveMoved
+    }
 
-Describe 'Move-BBServerRepository.when specified repository does not exist' {
-    Init
-    GivenASourceProject $sourceProjectKey -WithRepo $repoName
-    GivenATargetProject $targetProjectKey -WithRepo $repoName
-    WhenMovingRepositoryBetweenProjects -SourceProjectKey $sourceProjectKey -TargetProjectKey $targetProjectKey -Repo 'Non-existent Repo'
-    ThenErrors -ShouldBeThrown ('A repository with name ''Non-existent Repo'' does not exist in the project ''{0}''. Specified respository cannot be moved.' -f $sourceProjectKey)
+    It 'validates source repositry exists' {
+        GivenASourceProject $script:sourceProjectKey -WithRepo $script:repoName
+        GivenATargetProject $script:targetProjectKey -WithRepo $script:repoName
+        WhenMovingRepositoryBetweenProjects -SourceProjectKey $script:sourceProjectKey `
+                                            -TargetProjectKey $script:targetProjectKey `
+                                            -Repo 'Non-existent Repo'
+        $expectedMsg = 'A repository with name ''Non-existent Repo'' does not exist in the project ' +
+                       "'${script:sourceProjectKey}'. Specified respository cannot be moved."
+        ThenErrors -ShouldBeThrown $expectedMsg
+    }
 }

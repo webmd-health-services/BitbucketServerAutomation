@@ -1,165 +1,160 @@
-# Copyright 2016 - 2018 WebMD Health Services
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 #Requires -Version 5.1
 Set-StrictMode -Version 'Latest'
 
-& (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
-Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
+BeforeAll {
+    Set-StrictMode -Version 'Latest'
 
-$projectKey = 'NBBSBRANCH'
-$repo = $null
-$repoRoot = $null
-$repoName = $null
-$bbConnection = New-BBServerTestConnection -ProjectKey $projectKey -ProjectName 'New-BBServerBranch Tests'
+    & (Join-Path -Path $PSScriptRoot -ChildPath 'Initialize-BitbucketServerAutomationTest.ps1' -Resolve)
+    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\PSModules\GitAutomation') -Force
 
-function Init
-{
-    $script:repo = New-BBServerTestRepository -Connection $bbConnection -ProjectKey $projectKey
-    $script:repoRoot = $repo | Initialize-TestRepository -Connection $bbConnection
-    $script:repoName = $repo | Select-Object -ExpandProperty 'name'
+    $script:projectKey = 'NBBSBRANCH'
+    $script:repo = $null
+    $script:repoRoot = $null
+    $script:repoName = $null
+    $script:session = New-BBServerTestSession -ProjectKey $script:projectKey -ProjectName 'New-BBServerBranch Tests'
 
-    # $DebugPreference = 'Continue'
-    Write-Debug -Message ('Project: {0}' -f $projectKey)
-    Write-Debug -message ('Repository: {0}' -f $repoName)
-}
-
-function GivenARepository
-{
-    param(
-        $WithBranch
-    )
-
-    New-TestRepoCommit -RepoRoot $repoRoot -Connection $bbConnection
-
-    if ($WithBranch)
+    function GivenARepository
     {
-        New-GitBranch -Name $WithBranch -RepoRoot $repoRoot
-        Update-GitRepository -Revision $WithBranch -RepoRoot $repoRoot
-        Send-GitCommit -SetUpstream -RepoRoot $repoRoot -Credential $bbConnection.Credential
+        param(
+            $WithBranch
+        )
+
+        New-TestRepoCommit -RepoRoot $script:repoRoot -Session $script:session
+
+        if ($WithBranch)
+        {
+            New-GitBranch -Name $WithBranch -RepoRoot $script:repoRoot
+            Update-GitRepository -Revision $WithBranch -RepoRoot $script:repoRoot
+            Send-GitCommit -SetUpstream -RepoRoot $script:repoRoot -Credential $script:session.Credential
+        }
     }
-}
 
-function WhenCreatingANewBranch
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $BranchName,
-
-        [string]
-        $StartPoint,
-
-        [switch]
-        $ShouldThrowInvalidBranchPointException,
-
-        [switch]
-        $ShouldThrowDuplicateBranchException
-    )
-
-    $Global:Error.Clear()
-    
-    New-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $BranchName -StartPoint $StartPoint -ErrorAction SilentlyContinue | Out-Null
-    
-    if( $ShouldThrowInvalidBranchPointException )
+    function WhenCreatingANewBranch
     {
-        It 'should throw an error that an invalid branch start point was defined' {
+        [CmdletBinding()]
+        param(
+            [string]
+            $BranchName,
+
+            [string]
+            $StartPoint,
+
+            [switch]
+            $ShouldThrowInvalidBranchPointException,
+
+            [switch]
+            $ShouldThrowDuplicateBranchException
+        )
+
+        $Global:Error.Clear()
+
+        New-BBServerBranch -Session $script:session `
+                           -ProjectKey $script:projectKey `
+                           -RepoName $script:repoName `
+                           -BranchName $BranchName `
+                           -StartPoint $StartPoint `
+                           -ErrorAction SilentlyContinue |
+            Out-Null
+
+        if( $ShouldThrowInvalidBranchPointException )
+        {
             $Global:Error | Should -Match ('branch_cloned_from_invalid_start {0}' -f $StartPoint)
         }
-    }
-    elseif( $ShouldThrowDuplicateBranchException )
-    {
-        It 'should throw an error that the given branch name already exists' {
+        elseif( $ShouldThrowDuplicateBranchException )
+        {
             $Global:Error | Should -Match ('A branch with the name ''{0}'' already exists' -f $BranchName)
         }
+        else
+        {
+            $Global:Error | Should -BeNullOrEmpty
+        }
     }
-    else
+
+    function ThenNewBranch
     {
-        It 'should not throw any errors' {
-            $Global:Error | Should BeNullOrEmpty
+        [CmdletBinding()]
+        param(
+            [String] $ShouldBeCreated,
+
+            [String] $ShouldNotBeCreated,
+
+            [String] $ShouldNotBeCreatedAndOnlyExistOnce
+        )
+
+        if( $ShouldBeCreated )
+        {
+            $checkBranch = Get-BBServerBranch -Session $script:session `
+                                              -ProjectKey $script:projectKey `
+                                              -RepoName $script:repoName `
+                                              -BranchName $ShouldBeCreated
+
+            $checkBranch.displayId -eq $ShouldBeCreated | Should -BeTrue
+        }
+
+        if( $ShouldNotBeCreated )
+        {
+            $checkBranch = Get-BBServerBranch -Session $script:session `
+                                              -ProjectKey $script:projectKey `
+                                              -RepoName $script:repoName `
+                                              -BranchName $ShouldNotBeCreated
+
+            $checkBranch | Should -BeNullOrEmpty
+        }
+
+        if( $ShouldNotBeCreatedAndOnlyExistOnce )
+        {
+            [array]$checkBranch = Get-BBServerBranch -Session $script:session `
+                                                     -ProjectKey $script:projectKey `
+                                                     -RepoName $script:repoName `
+                                                     -BranchName $ShouldNotBeCreatedAndOnlyExistOnce
+
+            $checkBranch.Count | Should -Be 1
         }
     }
 }
 
-function ThenNewBranch
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $ShouldBeCreated,
+Describe 'New-BBServerBranch' {
+    BeforeEach {
+        $script:repo = New-BBServerTestRepository -Session $script:session -ProjectKey $script:projectKey
+        $script:repoRoot = $script:repo | Initialize-TestRepository -Session $script:session
+        $script:repoName = $script:repo | Select-Object -ExpandProperty 'name'
 
-        [string]
-        $ShouldNotBeCreated,
-
-        [string]
-        $ShouldNotBeCreatedAndOnlyExistOnce
-    )
-
-    if( $ShouldBeCreated )
-    {
-        $checkBranch = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $ShouldBeCreated
-
-        It ('should create a new branch named ''{0}''' -f $ShouldBeCreated) {
-            $checkBranch.displayId -eq $ShouldBeCreated | Should Be $true
-        }
+        # $DebugPreference = 'Continue'
+        Write-Debug -Message ('Project: {0}' -f $script:projectKey)
+        Write-Debug -message ('Repository: {0}' -f $script:repoName)
     }
 
-    if( $ShouldNotBeCreated )
-    {
-        $checkBranch = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $ShouldNotBeCreated
-
-        It ('should not create a new branch named ''{0}''' -f $ShouldNotBeCreated) {
-            $checkBranch | Should BeNullOrEmpty
-        }
+    It 'create a new branch based on an existing master branch' {
+        GivenARepository
+        WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' -StartPoint 'master'
+        ThenNewBranch -ShouldBeCreated 'branch_cloned_from_master'
     }
 
-    if( $ShouldNotBeCreatedAndOnlyExistOnce )
-    {
-        [array]$checkBranch = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName $ShouldNotBeCreatedAndOnlyExistOnce
-
-        It ('should not create a new branch named ''{0}'', which should only exist once' -f $ShouldNotBeCreatedAndOnlyExistOnce) {
-            $checkBranch.Count | Should Be 1
-        }
+    It 'creates a new branch based on an existing Commit ID' {
+        GivenARepository
+        $getBranch = Get-BBServerBranch -Session $script:session `
+                                        -ProjectKey $script:projectKey `
+                                        -RepoName $script:repoName `
+                                        -BranchName 'master'
+        $newBranchName = ('branch_cloned_from_commitid_{0}' -f $getBranch.latestCommit)
+        WhenCreatingANewBranch -BranchName $newBranchName -StartPoint $getBranch.latestCommit
+        ThenNewBranch -ShouldBeCreated $newBranchName
     }
-}
 
-Describe 'New-BBServerBranch.when creating a new branch based on an existing ''master'' branch' {
-    Init
-    GivenARepository
-    WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' -StartPoint 'master'
-    ThenNewBranch -ShouldBeCreated 'branch_cloned_from_master'
-}
+    It 'does not create branch from an invalid StartPoint' {
+        GivenARepository
+        WhenCreatingANewBranch -BranchName 'branch_cloned_from_invalid_start' `
+                               -StartPoint 'InvalidStartPoint' `
+                               -ShouldThrowInvalidBranchPointException
+        ThenNewBranch -ShouldNotBeCreated 'branch_cloned_from_invalid_start'
+    }
 
-Describe 'New-BBServerBranch.when creating a new branch based on an existing Commit ID' {
-    Init
-    GivenARepository
-    $getBranch = Get-BBServerBranch -Connection $bbConnection -ProjectKey $projectKey -RepoName $repoName -BranchName 'master'
-    $newBranchName = ('branch_cloned_from_commitid_{0}' -f $getBranch.latestCommit)
-    WhenCreatingANewBranch -BranchName $newBranchName -StartPoint $getBranch.latestCommit
-    ThenNewBranch -ShouldBeCreated $newBranchName
-}
-
-Describe 'New-BBServerBranch.when creating a branch from an invalid StartPoint' {
-    Init
-    GivenARepository
-    WhenCreatingANewBranch -BranchName 'branch_cloned_from_invalid_start' -StartPoint 'InvalidStartPoint' -ShouldThrowInvalidBranchPointException
-    ThenNewBranch -ShouldNotBeCreated 'branch_cloned_from_invalid_start'
-}
-
-Describe 'New-BBServerBranch.when creating a branch with a name that already exists' {
-    Init
-    GivenARepository -WithBranch 'branch_cloned_from_master'
-    WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' -StartPoint 'master' -ShouldThrowDuplicateBranchException
-    ThenNewBranch -ShouldNotBeCreatedAndOnlyExistOnce 'branch_cloned_from_master'
+    It 'handles existing branch' {
+        GivenARepository -WithBranch 'branch_cloned_from_master'
+        WhenCreatingANewBranch -BranchName 'branch_cloned_from_master' `
+                               -StartPoint 'master' `
+                               -ShouldThrowDuplicateBranchException
+        ThenNewBranch -ShouldNotBeCreatedAndOnlyExistOnce 'branch_cloned_from_master'
+    }
 }

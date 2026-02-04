@@ -28,25 +28,30 @@ function Initialize-TestRepository
     param(
         [Parameter(Mandatory, ValueFromPipeline)]
         # An object representing the Bitbucket server repository to clone locally. Pipe the output of `New-BBServerTestRepository` to this function.
-        [object]
-        $InputObject,
+        [Object] $InputObject,
 
         [Parameter(Mandatory)]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [switch]
-        $NoInitialCommit
+        [switch] $NoInitialCommit
     )
 
     $cloneUri = $InputObject.links.clone.href | Where-Object { $_ -match 'http' }
-    $credential = $Connection.Credential
-    $testRepo = Join-Path -Path $TestDrive.FullName -ChildPath ($InputObject | Select-Object -ExpandProperty 'name')
+    $credential = $Session.Credential
+    $repoPath = $TestDrive
+    # Pester 4
+    if ($repoPath | Get-Member -Name 'FullName')
+    {
+        $repoPath = $repoPath.FullName
+    }
+    $testRepo = Join-Path -Path $repoPath -ChildPath ($InputObject | Select-Object -ExpandProperty 'name')
 
     Copy-GitRepository -Source $cloneUri -DestinationPath $testRepo -Credential $credential | Write-Debug
 
     if (-not $NoInitialCommit)
     {
-        New-TestRepoCommit -RepoRoot $testRepo -Connection $Connection | Write-Debug
+        New-TestRepoCommit -RepoRoot $testRepo -Session $Session | Write-Debug
     }
 
     return $testRepo
@@ -56,18 +61,16 @@ function New-TestRepoCommit
 {
     param(
         [Parameter(Mandatory, ParameterSetName='RepoRoot')]
-        [string]
-        $RepoRoot,
+        [String] $RepoRoot,
 
         [Parameter(Mandatory)]
-        [object]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [string[]]
-        $Filename = ([IO.Path]::GetRandomFileName())
+        [String[]] $Filename = ([IO.Path]::GetRandomFileName())
     )
 
-    $credential = $Connection.Credential
+    $credential = $Session.Credential
 
     Push-Location -Path $RepoRoot
     try
@@ -116,15 +119,14 @@ function New-BBServerTestRepository
 {
     param(
         [Parameter(Mandatory)]
-        [object]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
         [Parameter(Mandatory)]
-        [string]
-        $ProjectKey
+        [String] $ProjectKey
     )
 
-    New-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name (New-TestRepoName)
+    New-BBServerRepository -Session $Session -ProjectKey $ProjectKey -Name (New-TestRepoName)
 }
 
 function New-BBServerTestSession

@@ -13,10 +13,6 @@ Build:
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
 
-- Pester4:
-    Script: Tests\*.Tests.ps1
-    Verbose: false
-
 - PowerShell:
     ScriptBlock: Copy-Item -Path @('.\CHANGELOG.md', '.\README.md') -Destination '.\BitbucketServerAutomation'
 
@@ -41,7 +37,6 @@ Build:
     - Tests\Enable-BBServerHook.Tests.ps1
     - Tests\Find-BBServerRepository.Tests.ps1
     - Tests\Get-BBServerBranch.Tests.ps1
-    - Tests\Get-BBServerChange.Tests.ps1
     - Tests\Get-BBServerDefaultReviewer.Tests.ps1
     - Tests\Get-BBServerFile.Tests.ps1
     - Tests\Get-BBServerFileContent.Tests.ps1
@@ -51,10 +46,7 @@ Build:
     - Tests\Get-BBServerRepository.Tests.ps1
     - Tests\Get-BBServerTag.Tests.ps1
     - Tests\Get-BBServerUser.Tests.ps1
-    - Tests\LicenseNotices.Tests.ps1
     - Tests\Merge-BBServerPullRequest.Tests.ps1
-    - Tests\Move-BBServerRepository.Tests.ps1
-    - Tests\New-BBServerBranch.Tests.ps1
     - Tests\New-BBServerDefaultReviewer.Tests.ps1
     - Tests\New-BBServerProject.Tests.ps1
     - Tests\New-BBServerPullRequest.Tests.ps1
@@ -80,7 +72,6 @@ Build:
             - "*\\Tests\\Enable-BBServerHook.Tests.ps1"
             - "*\\Tests\\Find-BBServerRepository.Tests.ps1"
             - "*\\Tests\\Get-BBServerBranch.Tests.ps1"
-            - "*\\Tests\\Get-BBServerChange.Tests.ps1"
             - "*\\Tests\\Get-BBServerDefaultReviewer.Tests.ps1"
             - "*\\Tests\\Get-BBServerFile.Tests.ps1"
             - "*\\Tests\\Get-BBServerFileContent.Tests.ps1"
@@ -90,10 +81,7 @@ Build:
             - "*\\Tests\\Get-BBServerRepository.Tests.ps1"
             - "*\\Tests\\Get-BBServerTag.Tests.ps1"
             - "*\\Tests\\Get-BBServerUser.Tests.ps1"
-            - "*\\Tests\\LicenseNotices.Tests.ps1"
             - "*\\Tests\\Merge-BBServerPullRequest.Tests.ps1"
-            - "*\\Tests\\Move-BBServerRepository.Tests.ps1"
-            - "*\\Tests\\New-BBServerBranch.Tests.ps1"
             - "*\\Tests\\New-BBServerDefaultReviewer.Tests.ps1"
             - "*\\Tests\\New-BBServerProject.Tests.ps1"
             - "*\\Tests\\New-BBServerPullRequest.Tests.ps1"
