@@ -65,7 +65,7 @@ Build:
     Configuration:
         Run:
             Path:
-            - Test\*.Tests.ps1
+            - Tests\*.Tests.ps1
             ExcludePath:
             - "*\\Tests\\BitbucketServerAutomation.Tests.ps1"
             - "*\\Tests\\Disable-BBServerHook.Tests.ps1"

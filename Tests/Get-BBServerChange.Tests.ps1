@@ -122,12 +122,14 @@ Describe 'Get-BBServerChange' {
         # $DebugPreference = 'Continue'
         Write-Debug -Message ('Project: {0}' -f $script:projectKey)
         Write-Debug -message ('Repository: {0}' -f $script:repoName)
+
+        $Global:Error.Clear()
     }
 
     It 'checks for changes on a branch that does not exist' {
         GivenARepositoryWithBranches -branchName 'branchA'
         WhenGettingChanges -From 'branchA' -To 'branchIDontExist' -ErrorAction SilentlyContinue
-        ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
+        ThenItShouldThrowAnError -ExpectedError 'does not exist in repository'
         ThenWeShouldGetNoChanges
     }
 
@@ -165,7 +167,7 @@ Describe 'Get-BBServerChange' {
         GivenARepositoryWithBranches -branchName 'branchA'
         GivenANewBranch -branchName 'branchB' -start 'master'
         WhenGettingChanges -From 'feature/test+tag?please&Encode' -To 'branchB' -ErrorAction SilentlyContinue
-        ThenItShouldThrowAnError -ExpectedError 'does not exist in this repository'
+        ThenItShouldThrowAnError -ExpectedError 'does not exist in repository'
         ThenWeShouldGetNoChanges
     }
 

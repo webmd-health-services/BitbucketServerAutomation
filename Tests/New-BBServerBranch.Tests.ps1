@@ -59,7 +59,7 @@ BeforeAll {
 
         if( $ShouldThrowInvalidBranchPointException )
         {
-            $Global:Error | Should -Match ('branch_cloned_from_invalid_start {0}' -f $StartPoint)
+            $Global:Error | Should -Match "Branch point '${StartPoint}' does not exist"
         }
         elseif( $ShouldThrowDuplicateBranchException )
         {

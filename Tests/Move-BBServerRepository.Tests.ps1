@@ -176,7 +176,7 @@ Describe 'Move-BBServerRepository' {
         WhenMovingRepositoryBetweenProjects -SourceProjectKey $script:sourceProjectKey `
                                             -TargetProjectKey $script:targetProjectKey `
                                             -Repo $script:repoName
-        ThenErrors -ShouldBeThrown ('This repository URL is already taken by ''{0}''.' -f $script:repoName)
+        ThenErrors -ShouldBeThrown 'This repository URL is already taken'
         ThenRepositoryShouldNotHaveMoved
     }
 
