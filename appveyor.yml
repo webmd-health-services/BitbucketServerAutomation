@@ -4,21 +4,45 @@ skip_tags: true
 
 skip_branch_with_pr: true
 
-image: Visual Studio 2019
+environment:
+  WHISKEY_DISABLE_ERROR_FORMAT: True
+  matrix:
+  - job_name: PowerShell on Windows
+    job_group: windows
+    appveyor_build_worker_image: Visual Studio 2022
 
-build_script:
-- ps: >-
-    $PSVersionTable
+  - job_name: Ubuntu
+    job_group: linux
+    appveyor_build_worker_image: Ubuntu2204
 
-    $env:BBSERVER_LICENSE | Set-Content -Path '.bbserverlicense'
+for:
+- matrix:
+    only:
+    - job_group: windows
+  build_script:
+  - ps: docker-switch-linux
+  - ps: &build_script |
+        $PSVersionTable
 
-    git config --global user.name $env:USERNAME
+        $env:BBSERVER_LICENSE | Set-Content -Path '.bbserverlicense'
 
-    git config --global user.email $('{0}@{1}' -f $env:USERNAME,$env:COMPUTERNAME)
+        git config --global user.name $env:USERNAME
 
-    .\init.ps1 -Windows
+        git config --global user.email $('{0}@{1}' -f $env:USERNAME,$env:COMPUTERNAME)
 
-    .\build.ps1
+        iwr https://raw.githubusercontent.com/webmd-health-services/Prism/main/Scripts/init.ps1 -UseBasicParsing |
+            iex |
+            Format-Table
+
+        .\init.ps1
+
+        .\build.ps1
+
+- matrix:
+    only:
+    - job_group: linux
+  build_script:
+  - pwsh: *build_script
 
 # on_finish:
 # - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

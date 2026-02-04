@@ -116,26 +116,33 @@ Write-Information "Waiting for Bitbucket Server to start."
 
 Start-Sleep -Seconds 20
 
-$bbServerUri = 'http://127.0.0.1:7990/'
+$bbServerUrl = 'http://127.0.0.1:7990/'
 $percentComplete = 1
 do
 {
-    $result = Invoke-WebRequest -Uri $bbServerUri -UseBasicParsing -Verbose:$false
-    if( $result )
+    try
     {
-        $status = $result.StatusCode
-
-        $title = ''
-        if ($result.RawContent -match '<title>(.*)<\/title>')
+        $result = Invoke-WebRequest -Uri $bbServerUrl -UseBasicParsing -Verbose:$false
+        if( $result )
         {
-            $title = $Matches[1]
-        }
+            $status = $result.StatusCode
 
-        Write-Information -Message "GET ${bbServerUri} -> ${status}  ${title}"
-        if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
-        {
-            break
+            $title = ''
+            if ($result.RawContent -match '<title>(.*)<\/title>')
+            {
+                $title = $Matches[1]
+            }
+
+            Write-Information -Message "GET ${bbServerUrl} -> ${status}  ${title}"
+            if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
+            {
+                break
+            }
         }
+    }
+    catch
+    {
+        Write-Information -Message "GET ${bbServerUrl} -> ${_}"
     }
 
     Start-Sleep -Seconds 5
