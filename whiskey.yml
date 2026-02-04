@@ -35,5 +35,81 @@ Build:
   .OnlyBy: BuildServer
 
 - Pester4:
-    Script: Tests\*.Tests.ps1
+    Script:
+    - Tests\BitbucketServerAutomation.Tests.ps1
+    - Tests\Disable-BBServerHook.Tests.ps1
+    - Tests\Enable-BBServerHook.Tests.ps1
+    - Tests\Find-BBServerRepository.Tests.ps1
+    - Tests\Get-BBServerBranch.Tests.ps1
+    - Tests\Get-BBServerChange.Tests.ps1
+    - Tests\Get-BBServerDefaultReviewer.Tests.ps1
+    - Tests\Get-BBServerFile.Tests.ps1
+    - Tests\Get-BBServerFileContent.Tests.ps1
+    - Tests\Get-BBServerHook.Tests.ps1
+    - Tests\Get-BBServerPullRequest.Tests.ps1
+    - Tests\Get-BBServerPullRequestSetting.Tests.ps1
+    - Tests\Get-BBServerRepository.Tests.ps1
+    - Tests\Get-BBServerTag.Tests.ps1
+    - Tests\Get-BBServerUser.Tests.ps1
+    - Tests\LicenseNotices.Tests.ps1
+    - Tests\Merge-BBServerPullRequest.Tests.ps1
+    - Tests\Move-BBServerRepository.Tests.ps1
+    - Tests\New-BBServerBranch.Tests.ps1
+    - Tests\New-BBServerDefaultReviewer.Tests.ps1
+    - Tests\New-BBServerProject.Tests.ps1
+    - Tests\New-BBServerPullRequest.Tests.ps1
+    - Tests\New-BBServerRepository.Tests.ps1
+    - Tests\New-BBServerTag.Tests.ps1
+    - Tests\Remove-BBServerRepository.Tests.ps1
+    - Tests\Remove-BBServerTag.Tests.ps1
+    - Tests\Rename-BBServerRepository.Tests.ps1
+    - Tests\Set-BBServerCommitBuildStatus.Tests.ps1
+    - Tests\Set-BBServerDefaultBranch.Tests.ps1
+    - Tests\Set-BBServerDefaultReviewer.Tests.ps1
+    - Tests\Set-BBServerPullRequestSetting.Tests.ps1
     .Verbose: false
+
+- Pester:
+    Configuration:
+        Run:
+            Path:
+            - Test\*.Tests.ps1
+            ExcludePath:
+            - "*\\Tests\\BitbucketServerAutomation.Tests.ps1"
+            - "*\\Tests\\Disable-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Enable-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Find-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Get-BBServerBranch.Tests.ps1"
+            - "*\\Tests\\Get-BBServerChange.Tests.ps1"
+            - "*\\Tests\\Get-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\Get-BBServerFile.Tests.ps1"
+            - "*\\Tests\\Get-BBServerFileContent.Tests.ps1"
+            - "*\\Tests\\Get-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Get-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\Get-BBServerPullRequestSetting.Tests.ps1"
+            - "*\\Tests\\Get-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Get-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Get-BBServerUser.Tests.ps1"
+            - "*\\Tests\\LicenseNotices.Tests.ps1"
+            - "*\\Tests\\Merge-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\Move-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\New-BBServerBranch.Tests.ps1"
+            - "*\\Tests\\New-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\New-BBServerProject.Tests.ps1"
+            - "*\\Tests\\New-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\New-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\New-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Remove-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Remove-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Rename-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Set-BBServerCommitBuildStatus.Tests.ps1"
+            - "*\\Tests\\Set-BBServerDefaultBranch.Tests.ps1"
+            - "*\\Tests\\Set-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\Set-BBServerPullRequestSetting.Tests.ps1"
+            Throw: true
+        TestResult:
+            Enabled: true
+            OutputPath: .output\pester.xml
+            TestSuiteName: Weaver
+        Output:
+            Verbosity: Detailed

@@ -116,10 +116,10 @@ function Invoke-BBServerRestMethod
     }
 
     #$DebugPreference = 'Continue'
-    Write-Debug -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(), $url)
+    Write-Verbose -Message ('{0} {1}' -f $Method.ToString().ToUpperInvariant(), $url.AbsoluteUri)
     if( $bodyParam['Body'] )
     {
-        Write-Debug -Message $bodyParam['Body']
+        Write-Verbose -Message $bodyParam['Body']
     }
 
     $credential = $Session.Credential
@@ -214,10 +214,14 @@ function Invoke-BBServerRestMethod
         if ($exceptionType -eq 'System.Net.WebException')
         {
             $response = $_.Exception.Response
-            if( $response )
+            if ($response -and $response.ContentType -like '*json*')
             {
                 $reader = New-Object 'IO.StreamReader' $response.GetResponseStream()
-                $responseContent = $reader.ReadToEnd() | ConvertFrom-Json
+                $json = $reader.ReadToEnd()
+                if ($json)
+                {
+                    $responseContent = $json | ConvertFrom-Json
+                }
                 $reader.Dispose()
             }
         }

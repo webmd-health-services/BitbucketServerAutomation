@@ -82,7 +82,9 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
     FunctionsToExport = @(
         'Find-BBServerRepository',
         'Disable-BBServerHook',
+        'Disable-BBServerRepository',
         'Enable-BBServerHook',
+        'Enable-BBServerRepository',
         'Get-BBServerBranch',
         'Get-BBServerChange',
         'Get-BBServerCommitBuildStatus',

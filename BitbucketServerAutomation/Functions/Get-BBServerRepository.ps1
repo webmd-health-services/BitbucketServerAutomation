@@ -47,7 +47,7 @@ function Get-BBServerRepository
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $resourcePath = 'projects/{0}/repos' -f $ProjectKey
+    $resourcePath = "projects/$([Uri]::EscapeDataString($ProjectKey))/repos"
 
     $result = Invoke-BBServerRestMethod -Session $Session -Method Get -ApiName 'api' -ResourcePath $resourcePath -IsPaged -ErrorVariable 'errors'
 
