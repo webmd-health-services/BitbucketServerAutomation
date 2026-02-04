@@ -35,20 +35,24 @@ Describe 'License Notices' {
             'pester.xml',
             'whiskey.yml',
             'build.ps1',
-            'appveyor.yml'
+            'appveyor.yml',
+            'Dockerfile',
+            'prism*.json'
         )
 
         $directoriesToExclude = @(
             '.github',
             '.output',
             '.vscode',
-            'PSModules'
+            'PSModules',
+            'Tests'
         )
 
         [object[]]$filesMissingLicense =
             Get-ChildItem -Path $projectRoot -Exclude $directoriesToExclude |
             Get-ChildItem -Recurse -File -Exclude $filesToSkip |
             Where-Object { $name = $_.Name; -not ($filesToSkip | Where-Object { $name -like $_ }) } |
+            Where-Object 'FullName' -NotLike '*\Functions\*' |
             ForEach-Object {
                 $fileInfo = $_
                 $file = Get-Content -Path $fileInfo.FullName -Raw
