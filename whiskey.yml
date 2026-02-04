@@ -2,6 +2,12 @@
 Build:
 - Version:
     Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
+    Prerelease:
+    - main: ""
+    - "*": rc1
+
+- Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
+  .OnlyBy: BuildServer
 
 - PowerShell: prism install | Format-Table -Auto
 

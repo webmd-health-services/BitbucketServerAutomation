@@ -156,6 +156,8 @@ The Bitbucket Server Automation module is used to interact with Bitbucket Server
             # ReleaseNotes of this module
             ReleaseNotes = 'https://github.com/webmd-health-services/BitbucketServerAutomation/blob/main/CHANGELOG.md'
 
+            Prerelease = ''
+
         } # End of PSData hashtable
 
     } # End of PrivateData hashtable
