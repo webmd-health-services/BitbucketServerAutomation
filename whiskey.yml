@@ -30,7 +30,12 @@ Build:
 - Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
   .OnlyBy: BuildServer
 
+# Tests are only run by developers for now because:
+# * Tests won't work on Linux because they currently depend on GitAutomation, which is Windows-only.
+# * Bitbucket Server 8, required for testing functionality that archives/unarchives repositories, is no longer suppoted
+#   on Windows, so has to be run in a container, and that is proving difficult.
 - Pester4:
+    .OnlyBy: Developer
     Script:
     - Tests\BitbucketServerAutomation.Tests.ps1
     - Tests\Disable-BBServerHook.Tests.ps1
@@ -62,6 +67,7 @@ Build:
     .Verbose: false
 
 - Pester:
+    .OnlyBy: Developer
     Configuration:
         Run:
             Path:
