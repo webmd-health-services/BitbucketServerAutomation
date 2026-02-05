@@ -68,6 +68,46 @@ To see a full list of available commands:
 
     Get-Command -Module 'BitbucketServerAutomation'
 
+# Functions
+
+BitbucketServerAutomation has the following functions:
+
+* `Disable-BBServerHook`
+* `Disable-BBServerRepository`
+* `Enable-BBServerHook`
+* `Enable-BBServerRepository`
+* `Find-BBServerRepository`
+* `Get-BBServerBranch`
+* `Get-BBServerChange`
+* `Get-BBServerCommitBuildStatus`
+* `Get-BBServerDefaultReviewer`
+* `Get-BBServerFile`
+* `Get-BBServerFileContent`
+* `Get-BBServerHook`
+* `Get-BBServerProject`
+* `Get-BBServerPullRequest`
+* `Get-BBServerPullRequestSetting`
+* `Get-BBServerRepository`
+* `Get-BBServerTag`
+* `Get-BBServerUser`
+* `Invoke-BBServerRestMethod`
+* `Merge-BBServerPullRequest`
+* `Move-BBServerRepository`
+* `New-BBServerBranch`
+* `New-BBServerDefaultReviewer`
+* `New-BBServerProject`
+* `New-BBServerPullRequest`
+* `New-BBServerRepository`
+* `New-BBServerSession`
+* `New-BBServerTag`
+* `Remove-BBServerRepository`
+* `Remove-BBServerTag`
+* `Rename-BBServerRepository`
+* `Set-BBServerCommitBuildStatus`
+* `Set-BBServerDefaultBranch`
+* `Set-BBServerDefaultReviewer`
+* `Set-BBServerPullRequestSetting`
+
 # Contributing
 
 ## Setting Up
