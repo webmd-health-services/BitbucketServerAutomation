@@ -4,3 +4,4 @@ Tests/BBServerAutomationTest/server.json
 /PSModules/
 /.output/
 /.vscode/
+/BitbucketServerAutomation/*.md

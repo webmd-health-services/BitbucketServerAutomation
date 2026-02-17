@@ -3,6 +3,28 @@
 
 # BitbucketServerAutomation Changelog
 
+## 1.2.0
+
+### Added
+
+* `New-BBServerSession` function to replace `New-BBServerConnection`.
+* `Session` parameter on all functions to replace `Connection` parameter.
+* `Disable-BBServerRepository` for archinving repositories.
+* `Enable-BBServerRepository` for unarchiving repositories.
+
+### Changed
+
+* `Invoke-BBServerRestMethod` now shows request URL and request body in PowerShell's verbose stream.
+
+### Fixed
+
+`Invoke-BBServerRestMethod` would fail if a response didn't return JSON, which happens with some bad requests.
+
+### Deprecated
+
+* `New-BBServerConnection`. Use `New-BBServerSession` instead.
+* `Connection` parameter on all functions. Use `Session` parameter instead.
+
 ## 1.1.1
 
 > Released 10 Jan 2024

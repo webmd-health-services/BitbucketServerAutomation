@@ -23,30 +23,22 @@ The `init.ps1` script initializes this repository for development. It:
 # limitations under the License.
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory, ParameterSetName='Docker')]
-    [switch]
-    # Run Bitbucket Server on the local machine as a Docker container.
-    $Docker,
+    # Name for the Bitbucket Server container. Defaults to "bitbucket".
+    [String] $ContainerName = 'bitbucket',
 
-    [Parameter(Mandatory, ParameterSetName='Windows')]
-    [switch]
-    # Run Bitbucket Server on the local machine as a Windows service.
-    $Windows,
+    # Name for the Bitbucket Server image that is built to run tests against. Defaults to "bitbucket-testinstance".
+    [String] $ImageName = 'bitbucket-testinstance',
 
-    [string]
-    # Version of Bitbucket Server to run.
-    $Version = '6.9.0',
-
-    [pscredential]
     # Credential object for the default Administrator account on the local Bitbucket Server instance. Defualts to username "admin" and password "admin".
-    $Credential
+    [pscredential] $Credential
 )
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 'Latest'
+$ErrorActionPreference = 'Stop'
+$InformationPreference = 'Continue'
 
 $licensePath = Join-Path -Path $PSScriptRoot -ChildPath '.bbserverlicense'
 if( -not (Test-Path -Path $licensePath -PathType Leaf) )
@@ -55,58 +47,107 @@ if( -not (Test-Path -Path $licensePath -PathType Leaf) )
     return
 }
 $license = Get-Content -Path $licensePath | ForEach-Object { $_.TrimEnd('\') + '\' }
-$license = $license -join [Environment]::NewLine
+$license = $license -join ''
 $license = $license.TrimEnd('\')
 
 if (-not $Credential)
 {
-    $Credential = New-Object -TypeName 'Management.Automation.PSCredential' -ArgumentList 'admin', (ConvertTo-SecureString 'admin' -AsPlainText -Force)
+    $Credential = [pscredential]::New('admin', (ConvertTo-SecureString 'admin' -AsPlainText -Force))
 }
 $bbServerCredPath = Join-Path -Path $PSScriptRoot -ChildPath '.bbservercredential'
 $Credential | Export-Clixml -Path $bbServerCredPath
 
-if ($Docker)
+if (-not (Get-Command -Name 'docker'))
 {
-    $bitbucketInstallScript = (Join-Path -Path $PSScriptRoot -ChildPath 'Scripts\Install-BitbucketServerDocker.ps1' -Resolve)
-}
-elseif ($Windows)
-{
-    $bitbucketInstallScript = (Join-Path -Path $PSScriptRoot -ChildPath 'Scripts\Install-BitbucketServerWindows.ps1' -Resolve)
+    return
 }
 
-& $bitbucketInstallScript -Credential $credential -License $license -Version $Version -Verbose:$VerbosePreference
+$dockerOS = docker version -f "{{ .Server.Os }}"
+if ($dockerOS -ne 'linux')
+{
+    $msg = 'Unable to run container. The Bitbucket Server Docker image is a Linux container but Docker on your ' +
+           "system is configured to run ""${dockerOS}""."
+    Write-Error -Message $msg
+    return
+}
 
-$currentActivity = 'Waiting for Bitbucket Server {0} to Start' -f $Version
-$title = 'Please wait. This could take several minutes'
-Write-Progress -Activity $currentActivity -Status $title
-Write-Verbose -Message $currentActivity
+$containerExists = docker ps -a -q --filter name=$ContainerName
+if($containerExists)
+{
+    $containerRunning = docker ps -a -q --filter name=$ContainerName --filter status=running
+    if ($containerRunning)
+    {
+        Write-Information "Container ${ContainerName} exists and running."
+        return
+    }
+
+    Write-Information -Message "Starting ""${ContainerName}""."
+    docker start $ContainerName
+    return
+}
+
+$dockerfilePath = Join-Path -Path $PSScriptRoot -ChildPath 'Dockerfile' -Resolve
+
+$buildArgs = & {
+    '--build-arg'
+    'LICENSE={0}' -f $license
+
+    '--build-arg'
+    'USERNAME={0}' -f $Credential.UserName
+
+    '--build-arg'
+    'PASSWORD={0}' -f $Credential.GetNetworkCredential().Password
+}
+
+Write-Information "Building ${ImageName} image from ${dockerFilePath}."
+docker build --pull -t $ImageName $buildArgs --file $dockerfilePath $PSScriptRoot
+
+$danglingImages = docker images -q --filter dangling=true
+if ($danglingImages)
+{
+    Write-Information "Removing dangling container images."
+    docker rmi $danglingImages
+}
+
+Write-Information "Running ${ContainerName} container."
+docker run --name=$ContainerName -d -p 7990:7990 -p 7999:7999 $ImageName
+
+Write-Information "Waiting for Bitbucket Server to start."
 
 Start-Sleep -Seconds 20
 
-$bbServerUri = 'http://127.0.0.1:7990/'
+$bbServerUrl = 'http://127.0.0.1:7990/'
 $percentComplete = 1
 do
 {
-    Write-Progress -Activity $currentActivity -Status $title -PercentComplete ($percentComplete++)
-    $result = Invoke-WebRequest -Uri $bbServerUri -Verbose:$false
-    if( $result )
+    try
     {
-        $status = $result.StatusCode
-
-        $title = ''
-        if ($result.RawContent -match '<title>(.*)<\/title>')
+        $result = Invoke-WebRequest -Uri $bbServerUrl -UseBasicParsing -Verbose:$false
+        if( $result )
         {
-            $title = $Matches[1]
-        }
+            $status = $result.StatusCode
 
-        Write-Verbose -Message ('GET {0} -> {1}  {2}' -F $bbServerUri,$status,$title)
-        if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
-        {
-            break
+            $title = ''
+            if ($result.RawContent -match '<title>(.*)<\/title>')
+            {
+                $title = $Matches[1]
+            }
+
+            Write-Information -Message "GET ${bbServerUrl} -> ${status}  ${title}"
+            if( $status -eq 200 -and $title -notmatch '\bStarting\b' )
+            {
+                break
+            }
         }
+    }
+    catch
+    {
+        Write-Information -Message "GET ${bbServerUrl} -> ${_}"
     }
 
     Start-Sleep -Seconds 5
+
+    $percentComplete += 10
 
     if( $percentComplete -gt 100 )
     {
@@ -114,5 +155,3 @@ do
     }
 }
 while( $true )
-
-Write-Progress -Activity $currentActivity -Completed

@@ -28,25 +28,30 @@ function Initialize-TestRepository
     param(
         [Parameter(Mandatory, ValueFromPipeline)]
         # An object representing the Bitbucket server repository to clone locally. Pipe the output of `New-BBServerTestRepository` to this function.
-        [object]
-        $InputObject,
+        [Object] $InputObject,
 
         [Parameter(Mandatory)]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [switch]
-        $NoInitialCommit
+        [switch] $NoInitialCommit
     )
 
     $cloneUri = $InputObject.links.clone.href | Where-Object { $_ -match 'http' }
-    $credential = $Connection.Credential
-    $testRepo = Join-Path -Path $TestDrive.FullName -ChildPath ($InputObject | Select-Object -ExpandProperty 'name')
+    $credential = $Session.Credential
+    $repoPath = $TestDrive
+    # Pester 4
+    if ($repoPath | Get-Member -Name 'FullName')
+    {
+        $repoPath = $repoPath.FullName
+    }
+    $testRepo = Join-Path -Path $repoPath -ChildPath ($InputObject | Select-Object -ExpandProperty 'name')
 
     Copy-GitRepository -Source $cloneUri -DestinationPath $testRepo -Credential $credential | Write-Debug
 
     if (-not $NoInitialCommit)
     {
-        New-TestRepoCommit -RepoRoot $testRepo -Connection $Connection | Write-Debug
+        New-TestRepoCommit -RepoRoot $testRepo -Session $Session | Write-Debug
     }
 
     return $testRepo
@@ -56,18 +61,16 @@ function New-TestRepoCommit
 {
     param(
         [Parameter(Mandatory, ParameterSetName='RepoRoot')]
-        [string]
-        $RepoRoot,
+        [String] $RepoRoot,
 
         [Parameter(Mandatory)]
-        [object]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [string[]]
-        $Filename = ([IO.Path]::GetRandomFileName())
+        [String[]] $Filename = ([IO.Path]::GetRandomFileName())
     )
 
-    $credential = $Connection.Credential
+    $credential = $Session.Credential
 
     Push-Location -Path $RepoRoot
     try
@@ -116,18 +119,17 @@ function New-BBServerTestRepository
 {
     param(
         [Parameter(Mandatory)]
-        [object]
-        $Connection,
+        [Alias('Connection')]
+        [Object] $Session,
 
         [Parameter(Mandatory)]
-        [string]
-        $ProjectKey
+        [String] $ProjectKey
     )
 
-    New-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name (New-TestRepoName)
+    New-BBServerRepository -Session $Session -ProjectKey $ProjectKey -Name (New-TestRepoName)
 }
 
-function New-BBServerTestConnection
+function New-BBServerTestSession
 {
     [CmdletBinding(DefaultParameterSetName='NoProject')]
     param(
@@ -151,7 +153,7 @@ function New-BBServerTestConnection
         throw ('The credential in ''{0}'' is not valid. Please delete this file, uninstall your local Bitbucket Server instance (with the Uninstall-BitbucketServer.ps1 PowerShell script in the root of the repository), and re-run init.ps1.')
     }
 
-    $conn = New-BBServerConnection -Credential $credential -Uri 'http://127.0.0.1:7990'
+    $conn = New-BBServerSession -Credential $credential -Url 'http://127.0.0.1:7990'
 
     if ($ProjectKey)
     {
@@ -161,45 +163,45 @@ function New-BBServerTestConnection
     return $conn
 }
 
+# TODO: remove once no more usages of New-BBServerTestConnection.
+Set-Alias -Name 'New-BBServerTestConnection' -Value 'New-BBServerTestSession'
+
 function Remove-BBServerTestRepository
 {
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Connection,
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [switch]
-        $Force
+        [switch] $Force
     )
 
-    Get-BBServerRepository -Connection $Connection -ProjectKey $ProjectKey -Name 'BitbucketServerAutomationTest*' | Remove-BBServerRepository -Connection $Connection -Force:$Force
+    Get-BBServerRepository -Session $Session -ProjectKey $ProjectKey |
+        Remove-BBServerRepository -Session $Session -Force:$Force
 }
 
 function Remove-BBServerTestProject
 {
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Connection,
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
         [Parameter(Mandatory=$true)]
-        [string]
-        $Key,
+        [String] $Key,
 
-        [switch]
-        $Force
+        [switch] $Force
     )
 
-    Remove-BBServerTestRepository -Connection $Connection -ProjectKey $Key -Force:$Force
+    Remove-BBServerTestRepository -Session $Session -ProjectKey $Key -Force:$Force
 
-    $projectExists = (Get-BBServerProject -Connection $Connection | Where-Object { $_.key -eq $Key })
+    $projectExists = (Get-BBServerProject -Session $Session | Where-Object { $_.key -eq $Key })
     if ($projectExists)
     {
-        Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}' -f $Key)
+        Invoke-BBServerRestMethod -Session $Session -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}' -f $Key)
     }
 }
 

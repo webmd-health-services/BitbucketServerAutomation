@@ -1,0 +1,12 @@
+{
+    "PSModules": [
+        {
+            "Name": "Carbon",
+            "Version": "2.*"
+        },
+        {
+            "Name": "GitAutomation",
+            "Version": "0.14.*"
+        }
+    ]
+}

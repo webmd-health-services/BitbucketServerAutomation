@@ -6,49 +6,54 @@ function Remove-BBServerRepository
     Remove a repository from Bitbucket Server.
 
     .DESCRIPTION
-    The `Remove-BBServerRepository` deletes a repository from Bitbucket Server. This is a dangerous operation as all related data is also deleted. You will have to confirm the deletion. To force the deletion without being confirmed, use the `Force` switch.
+    The `Remove-BBServerRepository` deletes a repository from Bitbucket Server. This is a dangerous operation as all
+    related data is also deleted. You will have to confirm the deletion. To force the deletion without being confirmed,
+    use the `Force` switch.
 
-    Use the `New-BBServerConnection` function to create a connection object to pass to the `Connection` parameter.
-
-    .EXAMPLE
-    Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'fubarsnafu'
-
-    Demonstrates how to delete a repository. Because deleting a repository is a high-impact operation, you will asked to confirm the deletion.
+    Use the `New-BBServerSession` function to create a Session object to pass to the `Session` parameter.
 
     .EXAMPLE
-    Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'fubarsnafu' -Force
+    Remove-BBServerRepository -Session $session -ProjectKey 'BBSA' -Name 'fubarsnafu'
 
-    Demonstrates how to delete a repository, skipping any confirmation dialogs. This can be dangerous since deletions can't be undone. Use the `Force` switch with care.
-
-    .EXAMPLE
-    Get-BBServerRepository -Connection $conn -ProjectKey 'BBSA' -Name 'snafu' | Remove-BBServerRepository -Connection $conn
-
-    Demonstrates that you can pipe objects returned by `Get-BBServerRepository` to `Remove-BBServerRepository`. When you pipe repository objects, you don't have to provide the project key
+    Demonstrates how to delete a repository. Because deleting a repository is a high-impact operation, you will asked to
+    confirm the deletion.
 
     .EXAMPLE
-    'fubarsnafu' | Remove-BBServerRepository -Connection $conn -ProjectKey 'BBSA'
+    Remove-BBServerRepository -Session $session -ProjectKey 'BBSA' -Name 'fubarsnafu' -Force
 
-    Demonstrates that you can pipe repository names to `Remove-BBServerRepository`. When you do, you *must* also provide the project key.
+    Demonstrates how to delete a repository, skipping any confirmation dialogs. This can be dangerous since deletions
+    can't be undone. Use the `Force` switch with care.
+
+    .EXAMPLE
+    Get-BBServerRepository -Session $session -ProjectKey 'BBSA' -Name 'snafu' | Remove-BBServerRepository -Session $session
+
+    Demonstrates that you can pipe objects returned by `Get-BBServerRepository` to `Remove-BBServerRepository`. When you
+    pipe repository objects, you don't have to provide the project key
+
+    .EXAMPLE
+    'fubarsnafu' | Remove-BBServerRepository -Session $session -ProjectKey 'BBSA'
+
+    Demonstrates that you can pipe repository names to `Remove-BBServerRepository`. When you do, you *must* also provide
+    the project key.
     #>
-    [CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact="High")]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The connection information that describe what Bitbucket Server instance to connect to, what credentials to use, etc. Use the `New-BBServerConnection` function to create a connection object.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [string]
         # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
-        $ProjectKey,
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [object]
         # The name of a specific repository to get.
-        $Name,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Object] $Name,
 
-        [Switch]
-        # Don't prompt the user to confirm the deletion of the repository. This is a dangerous switch to use, since repository deletions can't be undone.
-        $Force
+        # Don't prompt the user to confirm the deletion of the repository. This is a dangerous switch to use, since
+        # repository deletions can't be undone.
+        [switch] $Force
     )
 
     process
@@ -80,11 +85,11 @@ function Remove-BBServerRepository
             return
         }
 
-        $whatIfMessage = 'removing repository ''{0}/{1}'' from {2}' -f $ProjectKey,$Name,$Connection.Uri
-        $confirmMessage = 'Do you want to remove repository ''{0}/{1}'' from {2}?{3}{3}This operation is PERMANENT and can''t be undone!' -f $ProjectKey,$Name,$Connection.Uri,[Environment]::NewLine
+        $whatIfMessage = 'removing repository ''{0}/{1}'' from {2}' -f $ProjectKey,$Name,$Session.Url
+        $confirmMessage = 'Do you want to remove repository ''{0}/{1}'' from {2}?{3}{3}This operation is PERMANENT and can''t be undone!' -f $ProjectKey,$Name,$Session.Url,[Environment]::NewLine
         if( $Force -or $PSCmdlet.ShouldProcess($whatIfMessage,$confirmMessage,'Confirm Permanently Deleting Repository') )
         {
-            $result = Invoke-BBServerRestMethod -Connection $Connection -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$Name)
+            $result = Invoke-BBServerRestMethod -Session $Session -Method Delete -ApiName 'api' -ResourcePath ('projects/{0}/repos/{1}' -f $projectKey,$Name)
 
             if( $result )
             {

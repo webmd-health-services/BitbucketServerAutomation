@@ -30,7 +30,7 @@ if( (Test-Path -Path 'env:APPVEYOR') )
         Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'BBServerAutomationTest\BBServerAutomationTest.psm1' -Resolve)
     }
 }
-else 
+else
 {
     & (Join-Path -Path $PSScriptRoot -ChildPath '..\BitbucketServerAutomation\Import-BitbucketServerAutomation.ps1' -Resolve)
 
@@ -44,4 +44,5 @@ machine $($env:COMPUTERNAME)
 login $($bbConnection.Credential.UserName)
 password $($bbConnection.Credential.GetNetworkCredential().Password)
 "@
-$netrcFile = New-Item -Name '_netrc' -Force -Path $env:USERPROFILE -ItemType 'File' -Value $netrcConfig
+$userProfilePath = [Environment]::GetFolderPath('UserProfile')
+$netrcFile = New-Item -Name '_netrc' -Force -Path $userProfilePath -ItemType 'File' -Value $netrcConfig

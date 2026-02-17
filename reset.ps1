@@ -12,20 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The "VERSION" ARG is used in one of the FROM directives, therefore it *MUST*
-# come before any FROM directive in this file
-ARG VERSION
+[CmdletBinding(DefaultParameterSetName='All')]
+param(
+)
 
-FROM atlassian/bitbucket-server:${VERSION}
+Set-StrictMode -Version 'Latest'
+#Requires -RunAsAdministrator
 
-ARG LICENSE
-ARG USERNAME
-ARG PASSWORD
+$containerID = docker ps -a -q --filter name=bitbucket
+if ($containerID)
+{
+    docker rm $containerID --volumes --force
+}
 
-ENV SETUP_DISPLAYNAME="BitbucketServerAutomation Test Instance"
-ENV SETUP_BASEURL="http://127.0.0.1:7990/"
-ENV SETUP_LICENSE="${LICENSE}"
-ENV SETUP_SYSADMIN_USERNAME="${USERNAME}"
-ENV SETUP_SYSADMIN_PASSWORD="${PASSWORD}"
-ENV SETUP_SYSADMIN_DISPLAYNAME="Administrator"
-ENV SETUP_SYSADMIN_EMAILADDRESS="admin@example.com"
+$imageID = docker images -q bitbucket-testinstance
+if ($imageID)
+{
+    docker rmi $imageID
+}

@@ -9,45 +9,42 @@ function Set-BBServerPullRequestSetting
     The `Set-BBServerPullRequestSetting` function sets the specified pull request settings for a Bitbucket Server repository.
 
     .EXAMPLE
-    Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 2 -RequiredAllApprovers
+    Set-BBServerPullRequestSetting -Session $session -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 2 -RequiredAllApprovers
 
     Demonstrates how to set the pull request settings in the `TestRepo` repository as follows:
         Minimum of 2 approvers must approve; All selected approvers must approve
 
     .EXAMPLE
-    Set-BBServerPullRequestSetting -Connection $conn -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 1 -UnapproveOnUpdate $false
+    Set-BBServerPullRequestSetting -Session $session -ProjectKey 'TestProject' -RepoName 'TestRepo' -RequiredApprovers 1 -UnapproveOnUpdate $false
 
     Demonstrates how to set the pull request settings in the `TestRepo` repository as follows:
         Minimum of 1 approver must approve; Prior approvals will *not* be removed if the pull request is updated.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # An object that defines what Bitbucket Server to connect to and the credentials to use when connecting.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository resides. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The name of a specific repository.
-        $RepoName,
+        [Parameter(Mandatory)]
+        [String] $RepoName,
 
-        [int]
         # The minimum number of users that must approve a pull request before it can be merged.
-        $RequiredApprovers,
+        [int] $RequiredApprovers,
 
-        [boolean]
         # Whether or not all approvers must approve a pull request before it can be merged.
-        $RequiredAllApprovers,
+        [bool] $RequiredAllApprovers,
 
-        [boolean]
-        # Whether or not reviewers approvals will be removed if new commits are pushed or the pull request is retargeted to a different branch.
-        $UnapproveOnUpdate
+        # Whether or not reviewers approvals will be removed if new commits are pushed or the pull request is retargeted
+        # to a different branch.
+        [bool] $UnapproveOnUpdate
     )
 
     Set-StrictMode -Version 'Latest'
@@ -85,7 +82,7 @@ function Set-BBServerPullRequestSetting
         }
     }
 
-    $pullRequestSettings = Invoke-BBServerRestMethod -Connection $Connection -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath -InputObject $pullRequestSettingConfig
+    $pullRequestSettings = Invoke-BBServerRestMethod -Session $Session -Method 'POST' -ApiName 'api' -ResourcePath $resourcePath -InputObject $pullRequestSettingConfig
 
     return $pullRequestSettings
 }

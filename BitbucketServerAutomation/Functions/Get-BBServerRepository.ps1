@@ -8,7 +8,7 @@ function Get-BBServerRepository
     .DESCRIPTION
     The `Get-BBServerRepository` function gets Bitbucket Server repositories. Only the repositories under a specific project are returned. Pass the project's key/ID whose repositories to get with the `ProjectKey` parameter.
 
-    Use the `New-BBServerConnection` function to create a connection object that is passed to the `Connection` parameter.
+    Use the `New-BBServerSession` function to create a session object that is passed to the `Session` parameter.
 
     The returned objects have the following properties:
 
@@ -24,33 +24,32 @@ function Get-BBServerRepository
      * `links`: an object with two properties: `clone` an array of URLs you can use to clone; and `self` an HTTP URL for viewing the repository in a web browser
 
     .EXAMPLE
-    Get-BBServerRepository -Connection $conn -ProjectKey 'BBSA'
+    Get-BBServerRepository -Session $session -ProjectKey 'BBSA'
 
     Demonstrates how to get all the repositories under the `BBSA` project.
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
-        [object]
-        # The connection information that describe what Bitbucket Server instance to connect to, what credentials to use, etc. Use the `New-BBServerConnection` function to create a connection object.
-        $Connection,
+        # Session to the instance of Bitbucket Server to make requests to. Use `New-BBServerSession` to create a
+        # session.
+        [Parameter(Mandatory)]
+        [Alias('Connection')]
+        [Object] $Session,
 
-        [Parameter(Mandatory=$true)]
-        [string]
         # The key/ID that identifies the project where the repository will be created. This is *not* the project name.
-        $ProjectKey,
+        [Parameter(Mandatory)]
+        [String] $ProjectKey,
 
-        [string]
         # The name of a specific repository to get.
-        $Name
+        [String] $Name
     )
 
     Set-StrictMode -Version 'Latest'
     Use-CallerPreference -Cmdlet $PSCmdlet -Session $ExecutionContext.SessionState
 
-    $resourcePath = 'projects/{0}/repos' -f $ProjectKey
+    $resourcePath = "projects/$([Uri]::EscapeDataString($ProjectKey))/repos"
 
-    $result = Invoke-BBServerRestMethod -Connection $Connection -Method Get -ApiName 'api' -ResourcePath $resourcePath -IsPaged -ErrorVariable 'errors'
+    $result = Invoke-BBServerRestMethod -Session $Session -Method Get -ApiName 'api' -ResourcePath $resourcePath -IsPaged -ErrorVariable 'errors'
 
     if( $Name )
     {

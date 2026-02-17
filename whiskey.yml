@@ -1,65 +1,115 @@
-PublishOn:
- - main
- - prerelease
 
 Build:
 - Version:
     Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
+    Prerelease:
+    - main: ""
+    - "*": rc1
 
-- GetPowerShellModule:
-    Name: Carbon
-    Version: 2.9.*
+- Exec: appveyor UpdateBuild -Version "$(WHISKEY_SEMVER2)+$(WHISKEY_BUILD_NUMBER)"
+  .OnlyBy: BuildServer
 
-- GetPowerShellModule:
-    Name: GitAutomation
-    Version: 0.14.*
+- PowerShell: prism install | Format-Table -Auto
 
 - MergeFile:
-    OnlyBy: BuildServer
+    .OnlyBy: BuildServer
     Path:
     - BitbucketServerAutomation\Functions\*.ps1
     DestinationPath: BitbucketServerAutomation\BitbucketServerAutomation.psm1
     DeleteSourceFiles: true
     TextSeparator: "$(NewLine)$(NewLine)"
 
-- Pester4:
-    Script: Tests\*.Tests.ps1
-    Verbose: false
-
 - PowerShell:
     ScriptBlock: Copy-Item -Path @('.\CHANGELOG.md', '.\README.md') -Destination '.\BitbucketServerAutomation'
 
 - Zip:
-    ArchivePath: .output\BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip
-    Path: 
+    ArchivePath: $(WHISKEY_OUTPUT_DIRECTORY)\BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip
+    Path:
     - BitbucketServerAutomation
 
-Publish:
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip' -DeploymentName 'GitHub'
+  .OnlyBy: BuildServer
+
 - PublishPowerShellModule:
     Path: BitbucketServerAutomation
 
-- SetVariableFromPowerShellDataFile:
-    Path: BitbucketServerAutomation\BitbucketServerAutomation.psd1
-    Variables:
-        PrivateData:
-            PSData:
-                ReleaseNotes: RELEASE_NOTES
+- Exec: appveyor PushArtifact '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg' -DeploymentName 'PowerShellGallery'
+  .OnlyBy: BuildServer
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [ 'PushArtifact',
-                '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation-$(WHISKEY_SEMVER2).zip',
-                '-DeploymentName',
-                'GitHub' 
-    ]
+# Tests are only run by developers for now because:
+# * Tests won't work on Linux because they currently depend on GitAutomation, which is Windows-only.
+# * Bitbucket Server 8, required for testing functionality that archives/unarchives repositories, is no longer suppoted
+#   on Windows, so has to be run in a container, and that is proving difficult.
+- Pester4:
+    .OnlyBy: Developer
+    Script:
+    - Tests\BitbucketServerAutomation.Tests.ps1
+    - Tests\Disable-BBServerHook.Tests.ps1
+    - Tests\Enable-BBServerHook.Tests.ps1
+    - Tests\Find-BBServerRepository.Tests.ps1
+    - Tests\Get-BBServerBranch.Tests.ps1
+    - Tests\Get-BBServerDefaultReviewer.Tests.ps1
+    - Tests\Get-BBServerFile.Tests.ps1
+    - Tests\Get-BBServerFileContent.Tests.ps1
+    - Tests\Get-BBServerHook.Tests.ps1
+    - Tests\Get-BBServerPullRequest.Tests.ps1
+    - Tests\Get-BBServerPullRequestSetting.Tests.ps1
+    - Tests\Get-BBServerRepository.Tests.ps1
+    - Tests\Get-BBServerTag.Tests.ps1
+    - Tests\Get-BBServerUser.Tests.ps1
+    - Tests\Merge-BBServerPullRequest.Tests.ps1
+    - Tests\New-BBServerDefaultReviewer.Tests.ps1
+    - Tests\New-BBServerProject.Tests.ps1
+    - Tests\New-BBServerPullRequest.Tests.ps1
+    - Tests\New-BBServerRepository.Tests.ps1
+    - Tests\New-BBServerTag.Tests.ps1
+    - Tests\Remove-BBServerRepository.Tests.ps1
+    - Tests\Remove-BBServerTag.Tests.ps1
+    - Tests\Rename-BBServerRepository.Tests.ps1
+    - Tests\Set-BBServerCommitBuildStatus.Tests.ps1
+    - Tests\Set-BBServerDefaultBranch.Tests.ps1
+    - Tests\Set-BBServerDefaultReviewer.Tests.ps1
+    - Tests\Set-BBServerPullRequestSetting.Tests.ps1
+    .Verbose: false
 
-- Exec:
-    OnlyBy: BuildServer
-    Path: appveyor
-    Argument: [
-        'PushArtifact',
-        '$(WHISKEY_OUTPUT_DIRECTORY)/BitbucketServerAutomation.$(WHISKEY_SEMVER2_NO_BUILD_METADATA).nupkg',
-        '-DeploymentName',
-        'PowerShellGallery'
-    ]
+- Pester:
+    .OnlyBy: Developer
+    Configuration:
+        Run:
+            Path:
+            - Tests\*.Tests.ps1
+            ExcludePath:
+            - "*\\Tests\\BitbucketServerAutomation.Tests.ps1"
+            - "*\\Tests\\Disable-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Enable-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Find-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Get-BBServerBranch.Tests.ps1"
+            - "*\\Tests\\Get-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\Get-BBServerFile.Tests.ps1"
+            - "*\\Tests\\Get-BBServerFileContent.Tests.ps1"
+            - "*\\Tests\\Get-BBServerHook.Tests.ps1"
+            - "*\\Tests\\Get-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\Get-BBServerPullRequestSetting.Tests.ps1"
+            - "*\\Tests\\Get-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Get-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Get-BBServerUser.Tests.ps1"
+            - "*\\Tests\\Merge-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\New-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\New-BBServerProject.Tests.ps1"
+            - "*\\Tests\\New-BBServerPullRequest.Tests.ps1"
+            - "*\\Tests\\New-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\New-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Remove-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Remove-BBServerTag.Tests.ps1"
+            - "*\\Tests\\Rename-BBServerRepository.Tests.ps1"
+            - "*\\Tests\\Set-BBServerCommitBuildStatus.Tests.ps1"
+            - "*\\Tests\\Set-BBServerDefaultBranch.Tests.ps1"
+            - "*\\Tests\\Set-BBServerDefaultReviewer.Tests.ps1"
+            - "*\\Tests\\Set-BBServerPullRequestSetting.Tests.ps1"
+            Throw: true
+        TestResult:
+            Enabled: true
+            OutputPath: .output\pester.xml
+            TestSuiteName: Weaver
+        Output:
+            Verbosity: Detailed
